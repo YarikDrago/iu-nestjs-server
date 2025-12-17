@@ -19,6 +19,7 @@ import { UserStatus } from './user-status/user-status.entity';
       database: process.env.DB_NAME,
       entities: [User, UserStatus],
       // synchronize: true, // WARNING!
+      timezone: 'Z',
 
       ssl: process.env.DB_SSL_CA
         ? {
