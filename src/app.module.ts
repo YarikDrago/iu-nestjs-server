@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
-import { User } from './users/user.entity';
+import { User } from './users/entities/user.entity';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { ConfigModule } from '@nestjs/config';
-import { UserStatus } from './user-status/user-status.entity';
+import { UserStatus } from './users/entities/user-status.entity';
+import { UserActivationLink } from './users/entities/user-activation-links.entity';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { UserStatus } from './user-status/user-status.entity';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, UserStatus],
+      entities: [User, UserStatus, UserActivationLink],
       // synchronize: true, // WARNING!
       timezone: 'Z',
 

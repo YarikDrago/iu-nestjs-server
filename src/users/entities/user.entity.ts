@@ -4,8 +4,10 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
-import { UserStatus } from '../user-status/user-status.entity';
+import { UserStatus } from './user-status.entity';
+import { UserActivationLink } from './user-activation-links.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -24,4 +26,7 @@ export class User {
   @ManyToOne(() => UserStatus, (status) => status.users, { eager: true })
   @JoinColumn({ name: 'status_id' })
   status: UserStatus;
+
+  @OneToMany(() => UserActivationLink, (activationLink) => activationLink.user)
+  activationLinks: UserActivationLink[];
 }
