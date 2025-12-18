@@ -59,4 +59,45 @@ export class UsersService {
 
     return this.userActivationLinkRepository.save(activationLinkResult);
   }
+
+  async activate(token: string) {
+    console.log('try to activate user (service)');
+
+    const record = await this.userActivationLinkRepository.findOne({
+      where: { activation_link: token },
+    });
+
+    console.log('record:', record);
+
+    if (!record) {
+      console.log('record not found');
+      throw new Error('Activation link not found');
+    }
+
+    if (record.usedAt) {
+      throw new Error('Link already used');
+    }
+
+    if (record.expiration_date < new Date()) throw new Error('Link expired');
+
+    /* Find status ID of 'verified' */
+    const statusData = await this.userStatusRepository.findOne({
+      where: { name: 'verified' },
+    });
+
+    if (!statusData) throw new Error('Status not found');
+
+    /* Update user status */
+    await this.usersRepository.update(record.user_id, {
+      status: statusData,
+    });
+
+    /* Deactivate token */
+    await this.userActivationLinkRepository.update(
+      { id: record.id },
+      { usedAt: new Date() },
+    );
+
+    return { success: true };
+  }
 }

@@ -11,6 +11,7 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 import { MailService } from '../mail/mail.service';
+import { ActivateUserDto } from './dto/activate-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -70,5 +71,23 @@ export class UsersController {
     console.log('try to send email');
     await this.mailService.sendTestMail();
     throw new HttpException('Temporary error (msg)', HttpStatus.BAD_REQUEST);
+  }
+
+  @Post('activate')
+  async activate(@Body() dto: ActivateUserDto) {
+    try {
+      console.log('try to activate user');
+      if (!dto || !dto.token) {
+        console.log('token is null');
+        throw new HttpException('Token is required', HttpStatus.BAD_REQUEST);
+      }
+      console.log('token:', dto.token);
+      /* Find user by activation link */
+      await this.usersService.activate(dto.token);
+      return { message: 'User successfully activated' };
+    } catch (e) {
+      console.log('ERROR');
+      throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
+    }
   }
 }
