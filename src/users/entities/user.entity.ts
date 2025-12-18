@@ -27,6 +27,9 @@ export class User {
   @JoinColumn({ name: 'status_id' })
   status: UserStatus;
 
-  @OneToMany(() => UserActivationLink, (activationLink) => activationLink.user)
+  @OneToMany(
+    () => UserActivationLink,
+    (activationLink) => activationLink.user_id,
+  )
   activationLinks: UserActivationLink[];
 }

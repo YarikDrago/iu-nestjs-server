@@ -51,7 +51,7 @@ export class UsersService {
     /* Generate expiration date */
     const expirationDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // +7 days
     const activationLinkResult = this.userActivationLinkRepository.create({
-      user: { id: userId } as User,
+      user_id: userId,
       activation_link: activationLink,
       expiration_date: expirationDate,
       created_at: new Date(),
