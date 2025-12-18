@@ -29,4 +29,7 @@ export class UserActivationLink {
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  usedAt: Date;
 }
