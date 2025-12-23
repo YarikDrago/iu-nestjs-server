@@ -84,9 +84,10 @@ export class UsersController {
       console.log('token:', dto.token);
       /* Find user by activation link */
       await this.usersService.activate(dto.token);
+      console.log('user successfully activated');
       return { message: 'User successfully activated' };
     } catch (e) {
-      console.log('ERROR');
+      console.log('ERROR:', (e as Error).message);
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
     }
   }
