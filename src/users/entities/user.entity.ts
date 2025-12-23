@@ -27,6 +27,7 @@ export class User {
   @JoinColumn({ name: 'status_id' })
   status: UserStatus;
 
+  // TODO ??? delete cause activationLinks is not needed
   @OneToMany(
     () => UserActivationLink,
     (activationLink) => activationLink.user_id,
