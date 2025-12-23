@@ -63,4 +63,10 @@ export class RefreshTokenService {
       return { success: true };
     }
   }
+
+  async delete(refreshToken: string) {
+    console.log('try to delete refresh token (service)');
+    await this.refreshTokenRepository.delete({ token: refreshToken });
+    return { success: true };
+  }
 }

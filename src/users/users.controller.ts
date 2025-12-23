@@ -148,4 +148,20 @@ export class UsersController {
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
     }
   }
+
+  @Post('logout')
+  async logout(@Body() { refreshToken }: { refreshToken: string }) {
+    try {
+      console.log('try to logout user');
+      console.log('refreshToken:', refreshToken);
+      if (!refreshToken) {
+        return { message: 'User successfully logged out' };
+      }
+      await this.refreshTokenService.delete(refreshToken);
+      console.log('refresh token deleted');
+      return { message: 'User successfully logged out' };
+    } catch (e) {
+      throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
+    }
+  }
 }
