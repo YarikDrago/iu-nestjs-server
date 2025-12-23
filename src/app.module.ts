@@ -7,6 +7,8 @@ import * as path from 'node:path';
 import { ConfigModule } from '@nestjs/config';
 import { UserStatus } from './users/entities/user-status.entity';
 import { UserActivationLink } from './users/entities/user-activation-links.entity';
+import { RefreshTokenModule } from './refreshToken/refresh-token.module';
+import { RefreshToken } from './refreshToken/refresh-token.entity';
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { UserActivationLink } from './users/entities/user-activation-links.entit
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, UserStatus, UserActivationLink],
+      entities: [User, UserStatus, UserActivationLink, RefreshToken],
       // synchronize: true, // WARNING!
       timezone: 'Z',
 
@@ -29,6 +31,7 @@ import { UserActivationLink } from './users/entities/user-activation-links.entit
         : undefined,
     }),
     UsersModule,
+    RefreshTokenModule,
   ],
 })
 export class AppModule {}
