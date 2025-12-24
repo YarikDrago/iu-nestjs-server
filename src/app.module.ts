@@ -9,6 +9,7 @@ import { UserStatus } from './users/entities/user-status.entity';
 import { UserActivationLink } from './users/entities/user-activation-links.entity';
 import { RefreshTokenModule } from './refreshToken/refresh-token.module';
 import { RefreshToken } from './refreshToken/refresh-token.entity';
+import { FootballModule } from './football/football.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RefreshToken } from './refreshToken/refresh-token.entity';
     }),
     UsersModule,
     RefreshTokenModule,
+    FootballModule,
   ],
 })
 export class AppModule {}
