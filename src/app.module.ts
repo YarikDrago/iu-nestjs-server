@@ -10,6 +10,8 @@ import { UserActivationLink } from './users/entities/user-activation-links.entit
 import { RefreshTokenModule } from './refreshToken/refresh-token.module';
 import { RefreshToken } from './refreshToken/refresh-token.entity';
 import { FootballModule } from './football/football.module';
+import { TournamentsModule } from './tournaments/tournaments.module';
+import { Tournaments } from './tournaments/entities/tournament.entity';
 
 @Module({
   imports: [
@@ -21,7 +23,13 @@ import { FootballModule } from './football/football.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, UserStatus, UserActivationLink, RefreshToken],
+      entities: [
+        User,
+        UserStatus,
+        UserActivationLink,
+        RefreshToken,
+        Tournaments,
+      ],
       // synchronize: true, // WARNING!
       timezone: 'Z',
 
@@ -34,6 +42,7 @@ import { FootballModule } from './football/football.module';
     UsersModule,
     RefreshTokenModule,
     FootballModule,
+    TournamentsModule,
   ],
 })
 export class AppModule {}
