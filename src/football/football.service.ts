@@ -2,11 +2,12 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class FootballService {
-  async getApiData() {
+  constructor() {}
+  async getCompetitionData(tournamentId: string) {
     if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
     if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
     const response = await fetch(
-      `${process.env.FOOTBALL_API_URL}/competitions/2018/matches`,
+      `${process.env.FOOTBALL_API_URL}/competitions/${tournamentId}`,
       {
         method: 'GET',
         headers: {
@@ -14,7 +15,6 @@ export class FootballService {
         },
       },
     );
-    console.log(await response.json());
-    console.log('END');
+    return response;
   }
 }
