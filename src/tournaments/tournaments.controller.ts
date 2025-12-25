@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpException,
   HttpStatus,
   Post,
@@ -11,6 +12,23 @@ import { FootballTournamentDto } from '../football/dto/football-tournament.dto';
 @Controller('tournaments')
 export class TournamentsController {
   constructor(private readonly tournamentsService: TournamentsService) {}
+
+  @Get('')
+  async showAllTournaments() {
+    try {
+      console.log('try to show all tournaments');
+      const response = await this.tournamentsService.getAllTournaments();
+      console.log('tournaments data:', response);
+      const data = response.map((tournament) => ({
+        name: tournament.name,
+        isActive: tournament.isActive,
+      }));
+      return data;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+      throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
+    }
+  }
 
   @Post('add')
   async createTournament(@Body() body: { tournamentId: string }) {

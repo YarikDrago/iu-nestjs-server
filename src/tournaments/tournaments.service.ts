@@ -13,6 +13,10 @@ export class TournamentsService {
     private readonly footballService: FootballService,
   ) {}
 
+  async getAllTournaments() {
+    return await this.tournamentsRepo.find();
+  }
+
   async getTournament(externalId: string) {
     console.log('try to get tournaments (service)');
     const response = await this.footballService.getCompetitionData(externalId);
