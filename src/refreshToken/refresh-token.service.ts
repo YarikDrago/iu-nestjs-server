@@ -72,6 +72,21 @@ export class RefreshTokenService {
     }
   }
 
+  async check(refreshToken: string) {
+    console.log('try to check refresh token (service)');
+    const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
+    const token = await this.refreshTokenRepository.findOne({
+      where: { token: refreshTokenHash },
+    });
+    if (!token) return false;
+    // TODO revoke all tokens for current user (cause a replay attack)
+    if (token.revoked) {
+      return false;
+    }
+    if (token.expired_at < new Date()) return false;
+    return true;
+  }
+
   async delete(refreshToken: string) {
     console.log('try to delete refresh token (service)');
     await this.refreshTokenRepository.delete({ token: refreshToken });

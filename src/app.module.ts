@@ -12,6 +12,7 @@ import { RefreshToken } from './refreshToken/refresh-token.entity';
 import { FootballModule } from './football/football.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { Tournaments } from './tournaments/entities/tournament.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { Tournaments } from './tournaments/entities/tournament.entity';
         : undefined,
     }),
     UsersModule,
+    AuthModule,
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,
