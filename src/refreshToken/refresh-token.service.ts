@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshToken } from './refresh-token.entity';
 import { Repository } from 'typeorm';
+import { createHmac } from 'node:crypto';
 
 interface TokenPayload {
   email: string;
@@ -25,22 +26,27 @@ export class RefreshTokenService {
         expiresIn: '30m', // Set up the token's lifetime
       },
     );
-    const refreshToken = jwt.sign(
-      payload,
-      process.env.JWT_REFRESH_SECRET as string,
-      {
-        expiresIn: '30d', // Set up the token's lifetime
-      },
-    );
+
+    /* Generate random refresh token */
+    const refreshToken = Math.random().toString(36).substring(7);
+
     return {
       accessToken,
       refreshToken,
     };
   }
 
+  private createRefreshTokenHash(refreshToken: string) {
+    return createHmac('sha256', process.env.REFRESH_TOKEN_SECRET!)
+      .update(refreshToken)
+      .digest('hex');
+  }
+
   async save(userId: number, refreshToken: string) {
     console.log('try to save refresh token (service)');
-    /** First, we try to find such a token in the database.
+    const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
+    console.log('refreshTokenHash:', refreshTokenHash);
+    /* First, we try to find such a token in the database.
      * If the user is already logged in and is trying to log in from another device,
      * the token will be overwritten and the user will be kicked off the first device.
      * It is worth remembering that spent tokens must be deleted from the database
@@ -52,13 +58,15 @@ export class RefreshTokenService {
     if (existing) {
       await this.refreshTokenRepository.update(
         { id: existing.id },
-        { token: refreshToken },
+        { token: refreshTokenHash },
       );
       return { success: true };
     } else {
       await this.refreshTokenRepository.save({
         user_id: userId,
-        token: refreshToken,
+        token: refreshTokenHash,
+        created_at: new Date(),
+        expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       });
       return { success: true };
     }
