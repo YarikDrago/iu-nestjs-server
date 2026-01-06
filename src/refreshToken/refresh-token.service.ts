@@ -92,6 +92,15 @@ export class RefreshTokenService {
     return true;
   }
 
+  async revoke(refreshToken: string) {
+    console.log('try to revoke refresh token (service)');
+    const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
+    await this.refreshTokenRepository.update(
+      { token: refreshTokenHash },
+      { revoked: true },
+    );
+  }
+
   async delete(refreshToken: string) {
     console.log('try to delete refresh token (service)');
     await this.refreshTokenRepository.delete({ token: refreshToken });

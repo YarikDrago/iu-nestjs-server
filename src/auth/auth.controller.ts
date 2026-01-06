@@ -17,11 +17,25 @@ export class AuthController {
     const rawCookieHeader = req.headers.cookie ?? '';
     const cookies = cookie.parse(rawCookieHeader);
     const refreshToken = cookies['refreshToken'];
-    // TODO
+    // TODO if token is not found???
     if (!refreshToken) return false;
     console.log('refresh Token:', refreshToken);
     const result = await this.refreshTokenService.check(refreshToken);
     console.log('result:', result);
     return result;
+  }
+
+  @Get('revoke-refresh-token')
+  async revokeRefreshToken(@Req() req: Request) {
+    console.log('try to revoke refresh token');
+    const rawCookieHeader = req.headers.cookie ?? '';
+    const cookies = cookie.parse(rawCookieHeader);
+    const refreshToken = cookies['refreshToken'];
+
+    if (!refreshToken) return false;
+    console.log('refresh Token:', refreshToken);
+    await this.refreshTokenService.revoke(refreshToken);
+    console.log('refresh token revoked');
+    return true;
   }
 }
