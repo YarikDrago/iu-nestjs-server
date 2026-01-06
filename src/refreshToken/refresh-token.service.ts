@@ -43,32 +43,37 @@ export class RefreshTokenService {
   }
 
   async save(userId: number, refreshToken: string) {
-    console.log('try to save refresh token (service)');
-    const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
-    console.log('refreshTokenHash:', refreshTokenHash);
-    /* First, we try to find such a token in the database.
-     * If the user is already logged in and is trying to log in from another device,
-     * the token will be overwritten and the user will be kicked off the first device.
-     * It is worth remembering that spent tokens must be deleted from the database
-     * in order not to clog the database. */
-    const existing = await this.refreshTokenRepository.findOne({
-      where: { user_id: userId },
-    });
-
-    if (existing) {
-      await this.refreshTokenRepository.update(
-        { id: existing.id },
-        { token: refreshTokenHash },
-      );
-      return { success: true };
-    } else {
-      await this.refreshTokenRepository.save({
-        user_id: userId,
-        token: refreshTokenHash,
-        created_at: new Date(),
-        expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    try {
+      console.log('try to save refresh token (service)');
+      const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
+      console.log('refreshTokenHash:', refreshTokenHash);
+      /* First, we try to find such a token in the database.
+       * If the user is already logged in and is trying to log in from another device,
+       * the token will be overwritten and the user will be kicked off the first device.
+       * It is worth remembering that spent tokens must be deleted from the database
+       * in order not to clog the database. */
+      const existing = await this.refreshTokenRepository.findOne({
+        where: { user: { id: userId } },
       });
-      return { success: true };
+
+      if (existing) {
+        await this.refreshTokenRepository.update(
+          { id: existing.id },
+          { token: refreshTokenHash },
+        );
+        return { success: true };
+      } else {
+        await this.refreshTokenRepository.save({
+          user_id: userId,
+          token: refreshTokenHash,
+          created_at: new Date(),
+          expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        });
+        return { success: true };
+      }
+    } catch (e) {
+      console.log('error:', e);
+      throw new Error('Error saving refresh token');
     }
   }
 
