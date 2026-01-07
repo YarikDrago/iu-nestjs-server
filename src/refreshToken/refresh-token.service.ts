@@ -80,16 +80,17 @@ export class RefreshTokenService {
   async check(refreshToken: string) {
     console.log('try to check refresh token (service)');
     const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
-    const token = await this.refreshTokenRepository.findOne({
+    const result = await this.refreshTokenRepository.findOne({
       where: { token: refreshTokenHash },
+      relations: { user: true }, // TODO make optional
     });
-    if (!token) return false;
+    if (!result) return false;
     // TODO revoke all tokens for current user (cause a replay attack)
-    if (token.revoked) {
+    if (result.revoked) {
       return false;
     }
-    if (token.expired_at < new Date()) return false;
-    return true;
+    if (result.expired_at < new Date()) return false;
+    return result;
   }
 
   async revoke(refreshToken: string) {
