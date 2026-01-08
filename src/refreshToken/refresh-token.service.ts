@@ -87,6 +87,7 @@ export class RefreshTokenService {
     if (!result) return false;
     // TODO revoke all tokens for current user (cause a replay attack)
     if (result.revoked) {
+      console.log('token revoked');
       return false;
     }
     if (result.expired_at < new Date()) return false;
