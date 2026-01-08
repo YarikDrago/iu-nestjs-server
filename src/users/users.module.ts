@@ -15,5 +15,6 @@ import { RefreshTokenModule } from '../refreshToken/refresh-token.module';
   ],
   providers: [UsersService, MailService],
   controllers: [UsersController],
+  exports: [UsersService],
 })
 export class UsersModule {}

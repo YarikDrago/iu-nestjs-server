@@ -136,7 +136,7 @@ export class UsersController {
         nickname: user.nickname,
       });
       console.log('tokens:', tokens);
-      /* Save refresh token to the DB */
+      /* Save a refresh token to the DB */
       await this.refreshTokenService.save(user.id, tokens.refreshToken);
       console.log('refresh token saved');
       return {
