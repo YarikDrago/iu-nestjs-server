@@ -3,10 +3,11 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RefreshTokenModule } from '../refreshToken/refresh-token.module';
 import { UsersModule } from '../users/users.module';
+import { MailService } from '../mail/mail.service';
 
 @Module({
   imports: [RefreshTokenModule, UsersModule],
-  providers: [AuthService],
+  providers: [AuthService, MailService],
   exports: [AuthService],
   controllers: [AuthController],
 })

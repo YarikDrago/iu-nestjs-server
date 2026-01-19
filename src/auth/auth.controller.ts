@@ -15,6 +15,9 @@ import { RefreshTokenService } from '../refreshToken/refresh-token.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import { RegisterUserDto } from '../users/dto/register-user.dto';
+import { v4 as uuidv4 } from 'uuid';
+import { MailService } from '../mail/mail.service';
 
 @Controller('auth')
 export class AuthController {
@@ -22,6 +25,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly mailService: MailService,
   ) {}
 
   @Post('login')
@@ -76,6 +80,47 @@ export class AuthController {
     } catch (e) {
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Post('register')
+  async register(@Body() body: RegisterUserDto) {
+    console.log('try to register user');
+    if (!body || !body.email || !body.nickname || !body.password)
+      throw new HttpException(
+        'Email, nickname and password are required',
+        HttpStatus.BAD_REQUEST,
+      );
+    console.log('body:', body);
+    const email = body.email.toLowerCase();
+    const nickname = body.nickname;
+    const password = body.password;
+    /* Try to find the current email in the DB. The new email must be out of the DB. **/
+    const findUser = await this.usersService.findUserByEmail(email);
+    if (findUser) {
+      throw new HttpException('Email already exists', HttpStatus.BAD_REQUEST);
+    }
+    console.log('User does not exist in the DB');
+    /* Generate unique activation link */
+    // TODO [iu]: check uniqueness of the link
+    const activationLink = uuidv4();
+    console.log('activation Link:', activationLink);
+    // Hashing of the password. 1- password, 2- salt
+    const hashPassword = await bcrypt.hash(password, 3);
+    console.log('hashed password:', hashPassword);
+    /* Add new user to the DB */
+    const addingUser = await this.usersService.addNewUser({
+      email: email,
+      nickname: nickname,
+      password: hashPassword,
+    });
+    console.log('added user:', addingUser);
+    const userId = addingUser.id;
+    /* Save activation link to the DB */
+    await this.usersService.addNewUserActivationLink(userId, activationLink);
+    /* Send the activation link to the user's email */
+    await this.mailService.sendActivationLink(email, activationLink);
+    console.log("Activation link was successfully sent to the user's email!");
+    return true;
   }
 
   @Get('check-access-token')
