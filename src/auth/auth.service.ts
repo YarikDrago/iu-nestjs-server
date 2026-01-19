@@ -7,6 +7,7 @@ import {
 import { RefreshTokenService } from '../refreshToken/refresh-token.service';
 import { UsersService } from '../users/users.service';
 import * as jwt from 'jsonwebtoken';
+import type { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -74,5 +75,29 @@ export class AuthService {
     console.log('refresh token saved');
 
     return tokens;
+  }
+
+  writeTokensToCookies(
+    accessToken: string,
+    refreshToken: string,
+    res: Response,
+  ) {
+    const isProd = process.env.NODE_ENV === 'production';
+
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: 30 * 60 * 1000, // 30m
+      path: '/',
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d (подстрой под свою политику)
+      path: '/',
+    });
   }
 }

@@ -6,11 +6,11 @@ import {
   HttpStatus,
   Post,
   Req,
+  Res,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import * as cookie from 'cookie';
-import type { Request } from 'express';
 import { RefreshTokenService } from '../refreshToken/refresh-token.service';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 import { UsersService } from '../users/users.service';
@@ -19,6 +19,7 @@ import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { MailService } from '../mail/mail.service';
 import { ActivateUserDto } from '../users/dto/activate-user.dto';
+import type { Request, Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -30,7 +31,10 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  async login(@Body() dto: LoginUserDto) {
+  async login(
+    @Body() dto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     try {
       console.log('try to login user');
       if (!dto || !dto.email || !dto.password) {
@@ -69,13 +73,18 @@ export class AuthController {
         email: user.email,
         nickname: user.nickname,
       });
-      console.log('tokens:', tokens);
+      console.log('tokens generated:', tokens);
       /* Save a refresh token to the DB */
       await this.refreshTokenService.save(user.id, tokens.refreshToken);
       console.log('refresh token saved');
+
+      this.authService.writeTokensToCookies(
+        tokens.accessToken,
+        tokens.refreshToken,
+        res,
+      );
+
       return {
-        refreshToken: tokens.refreshToken,
-        accessToken: tokens.accessToken,
         nickname: user.nickname,
       };
     } catch (e) {
