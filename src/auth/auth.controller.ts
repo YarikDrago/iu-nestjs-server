@@ -97,6 +97,7 @@ export class AuthController {
     /* Try to find the current email in the DB. The new email must be out of the DB. **/
     const findUser = await this.usersService.findUserByEmail(email);
     if (findUser) {
+      console.log('Email already exists');
       throw new HttpException('Email already exists', HttpStatus.BAD_REQUEST);
     }
     console.log('User does not exist in the DB');
