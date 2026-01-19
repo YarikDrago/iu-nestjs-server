@@ -5,18 +5,35 @@ import {
   HttpException,
   HttpStatus,
   Post,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
 import { FootballTournamentDto } from '../football/dto/football-tournament.dto';
+import { AuthService } from '../auth/auth.service';
+import type { Request } from 'express';
+import * as cookie from 'cookie';
 
 @Controller('tournaments')
 export class TournamentsController {
-  constructor(private readonly tournamentsService: TournamentsService) {}
+  constructor(
+    private readonly tournamentsService: TournamentsService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get('')
-  async showAllTournaments() {
+  async showAllTournaments(@Req() req: Request) {
     try {
       console.log('try to show all tournaments');
+      // TODO
+      const rawCookieHeader = req.headers.cookie ?? '';
+      const cookies = cookie.parse(rawCookieHeader);
+      const accessToken = cookies['accessToken'];
+      if (!accessToken) {
+        console.log('access Token is not found');
+        throw new UnauthorizedException('Access token is not found 4');
+      }
+      this.authService.checkAccessToken(accessToken);
       const response = await this.tournamentsService.getAllTournaments();
       console.log('tournaments data:', response);
       const data = response.map((tournament) => ({
@@ -25,8 +42,16 @@ export class TournamentsController {
       }));
       return data;
     } catch (e) {
-      console.log('ERROR:', (e as Error).message);
-      throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
+      console.log('error:', e);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error).message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
