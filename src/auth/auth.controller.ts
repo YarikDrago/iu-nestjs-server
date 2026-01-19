@@ -18,6 +18,7 @@ import * as bcrypt from 'bcrypt';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { MailService } from '../mail/mail.service';
+import { ActivateUserDto } from '../users/dto/activate-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -188,6 +189,25 @@ export class AuthController {
     await this.refreshTokenService.revoke(refreshToken);
     console.log('refresh token revoked');
     return true;
+  }
+
+  @Post('activate')
+  async activate(@Body() dto: ActivateUserDto) {
+    try {
+      console.log('try to activate user');
+      if (!dto || !dto.token) {
+        console.log('token is null');
+        throw new HttpException('Token is required', HttpStatus.BAD_REQUEST);
+      }
+      console.log('token:', dto.token);
+      /* Find user by activation link */
+      await this.usersService.activate(dto.token);
+      console.log('user successfully activated');
+      return { message: 'User successfully activated' };
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+      throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Post('logout')
