@@ -1,6 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RefreshTokenService } from '../refreshToken/refresh-token.service';
 import { UsersService } from '../users/users.service';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
@@ -8,6 +14,25 @@ export class AuthService {
     private readonly refreshTokenService: RefreshTokenService,
     private readonly usersService: UsersService,
   ) {}
+
+  checkAccessToken(accessToken: string) {
+    console.log('access Token:', accessToken);
+    const secret = process.env.JWT_ACCESS_SECRET;
+    if (!secret) {
+      throw new HttpException(
+        'JWT_ACCESS_SECRET is not configured',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    try {
+      jwt.verify(accessToken, secret);
+      console.log('access token is valid');
+      return true;
+    } catch (e) {
+      console.log('access token is invalid:', (e as Error).message);
+      throw new UnauthorizedException('Access token is invalid');
+    }
+  }
 
   async refreshSession(refreshToken: string) {
     /* 1) Check refresh token and get user ID

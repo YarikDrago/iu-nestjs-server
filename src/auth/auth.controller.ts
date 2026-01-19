@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import * as cookie from 'cookie';
@@ -16,6 +17,20 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly refreshTokenService: RefreshTokenService,
   ) {}
+
+  @Get('check-access-token')
+  checkAccessToken(@Req() req: Request) {
+    console.log('try to check access token');
+    const rawCookieHeader = req.headers.cookie ?? '';
+    const cookies = cookie.parse(rawCookieHeader);
+    const accessToken = cookies['accessToken'];
+    if (!accessToken) {
+      console.log('access Token is not found');
+      throw new UnauthorizedException('Access token is not found');
+    }
+    this.authService.checkAccessToken(accessToken);
+    return true;
+  }
 
   @Get('check-refresh-token')
   async checkRefreshToken(@Req() req: Request) {
