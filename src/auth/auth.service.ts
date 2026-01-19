@@ -40,8 +40,8 @@ export class AuthService {
      * 3) Revoke old token
      * 3) Generate new tokens (access + refresh)
      * 4) Save refresh token to the DB */
-    console.log('try to refresh session');
-    console.log('refresh token from client: ', Boolean(refreshToken));
+    console.log('try to refresh session (service)');
+    console.log('refresh token from client: ', refreshToken);
 
     if (!refreshToken) {
       console.log('Error: ', 'refreshToken is required');

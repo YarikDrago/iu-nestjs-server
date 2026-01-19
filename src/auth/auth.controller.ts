@@ -52,7 +52,7 @@ export class AuthController {
   @Get('refresh-tokens')
   async refreshTokens(@Req() req: Request) {
     try {
-      console.log('try to refresh session');
+      console.log('try to refresh tokens');
       const rawCookieHeader = req.headers.cookie ?? '';
       const cookies = cookie.parse(rawCookieHeader);
       const refreshToken = cookies['refreshToken'];

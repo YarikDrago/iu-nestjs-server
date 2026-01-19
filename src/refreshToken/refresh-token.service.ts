@@ -78,7 +78,7 @@ export class RefreshTokenService {
   }
 
   async check(refreshToken: string) {
-    console.log('try to check refresh token (service)');
+    console.log('try to check refresh token (service):', refreshToken);
     const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
     const result = await this.refreshTokenRepository.findOne({
       where: { token: refreshTokenHash },
