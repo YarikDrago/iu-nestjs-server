@@ -12,7 +12,6 @@ import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 import { MailService } from '../mail/mail.service';
 import { ActivateUserDto } from './dto/activate-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
 import { RefreshTokenService } from '../refreshToken/refresh-token.service';
 
 @Controller('users')
@@ -91,60 +90,6 @@ export class UsersController {
       return { message: 'User successfully activated' };
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
-      throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  @Post('login')
-  async login(@Body() dto: LoginUserDto) {
-    try {
-      console.log('try to login user');
-      if (!dto || !dto.email || !dto.password) {
-        throw new HttpException(
-          'Email and password are required',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      console.log('dto:', dto);
-      const user = await this.usersService.findUserByEmail(dto.email);
-      if (!user) {
-        console.log('user not found');
-        throw new HttpException(
-          'Incorrect credentials',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      console.log('user:', user);
-      if (user.status.name === 'inactive') {
-        throw new HttpException(
-          'Incorrect credentials',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      console.log('user is active');
-      // Compare hashes of passwords
-      const isMatch = await bcrypt.compare(dto.password, user.password);
-      console.log('passwords is match:', isMatch);
-      if (!isMatch)
-        throw new HttpException(
-          'Incorrect credentials',
-          HttpStatus.BAD_REQUEST,
-        );
-      /* Generate a new pair of tokens */
-      const tokens = this.refreshTokenService.generateTokens({
-        email: user.email,
-        nickname: user.nickname,
-      });
-      console.log('tokens:', tokens);
-      /* Save a refresh token to the DB */
-      await this.refreshTokenService.save(user.id, tokens.refreshToken);
-      console.log('refresh token saved');
-      return {
-        refreshToken: tokens.refreshToken,
-        accessToken: tokens.accessToken,
-        nickname: user.nickname,
-      };
-    } catch (e) {
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
     }
   }
