@@ -81,6 +81,8 @@ export class AuthService {
     accessToken: string,
     refreshToken: string,
     res: Response,
+    /* Set cookie to reset it after logout */
+    resetCookie: boolean = false,
   ) {
     const isProd = process.env.NODE_ENV === 'production';
 
@@ -88,7 +90,7 @@ export class AuthService {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? 'none' : 'lax',
-      maxAge: 30 * 60 * 1000, // 30m
+      maxAge: resetCookie ? 0 : 30 * 60 * 1000, // 30m
       path: '/',
     });
 
@@ -96,7 +98,7 @@ export class AuthService {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d (подстрой под свою политику)
+      maxAge: resetCookie ? 0 : 7 * 24 * 60 * 60 * 1000, // 7d (подстрой под свою политику)
       path: '/',
     });
   }
