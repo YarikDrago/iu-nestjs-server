@@ -1,4 +1,12 @@
-export class FootballTournamentDto {
+type FootballSeason = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  currentMatchday: number;
+  winner: string | null;
+};
+
+export class FootballTournamentGeneralDto {
   id: number;
   area: {
     id: number;
@@ -11,13 +19,8 @@ export class FootballTournamentDto {
   type: string;
   emblem: string; // link
   plan: string;
-  currentSeason: {
-    id: string;
-    startDate: string;
-    endDate: string;
-    currentMatchday: number;
-    winner: string | null;
-  };
+  currentSeason: FootballSeason;
   numberOfAvailableSeasons: number;
   lastUpdated: string;
+  seasons: FootballSeason[];
 }

@@ -9,7 +9,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
-import { FootballTournamentDto } from '../football/dto/football-tournament.dto';
+import { FootballTournamentGeneralDto } from '../football/dto/football-tournament-general.dto';
 import { AuthService } from '../auth/auth.service';
 import type { Request } from 'express';
 import * as cookie from 'cookie';
@@ -68,7 +68,8 @@ export class TournamentsController {
       );
       console.log('tournament data:', tournamentResponse);
       if (!tournamentResponse) throw new Error('Tournament not found');
-      const data = (await tournamentResponse.json()) as FootballTournamentDto;
+      const data =
+        (await tournamentResponse.json()) as FootballTournamentGeneralDto;
       const response = await this.tournamentsService.addNewTournament({
         external_id: data.id,
         name: data.name,
