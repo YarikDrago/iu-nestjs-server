@@ -105,7 +105,8 @@ export class RefreshTokenService {
 
   async delete(refreshToken: string) {
     console.log('try to delete refresh token (service)');
-    await this.refreshTokenRepository.delete({ token: refreshToken });
+    const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
+    await this.refreshTokenRepository.delete({ token: refreshTokenHash });
     return { success: true };
   }
 }
