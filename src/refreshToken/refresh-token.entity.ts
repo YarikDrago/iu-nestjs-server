@@ -4,7 +4,6 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  RelationId,
 } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 
@@ -17,11 +16,11 @@ export class RefreshToken {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @RelationId((refreshToken: RefreshToken) => refreshToken.user)
-  user_id: number;
-
-  // @Column({ name: 'user_id' })
+  // @RelationId((refreshToken: RefreshToken) => refreshToken.user)
   // user_id: number;
+
+  @Column({ name: 'user_id' })
+  user_id: number;
 
   // Hash of token (not JWT)
   @Column({ name: 'token' })
