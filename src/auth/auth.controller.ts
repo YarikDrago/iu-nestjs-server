@@ -235,15 +235,23 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Body() { refreshToken }: { refreshToken: string }) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     try {
       console.log('try to logout user');
+      const rawCookieHeader = req.headers.cookie ?? '';
+      const cookies = cookie.parse(rawCookieHeader);
+      const refreshToken = cookies['refreshToken'];
       console.log('refreshToken:', refreshToken);
       if (!refreshToken) {
-        return { message: 'User successfully logged out' };
+        throw new HttpException(
+          'Refresh token is not found',
+          HttpStatus.BAD_REQUEST,
+        );
       }
       await this.refreshTokenService.delete(refreshToken);
       console.log('refresh token deleted');
+
+      this.authService.writeTokensToCookies('', '', res, true);
       return { message: 'User successfully logged out' };
     } catch (e) {
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
