@@ -157,10 +157,15 @@ export class AuthController {
     // TODO if token is not found???
     if (!refreshToken) {
       console.log('refresh Token is not found');
-      return false;
+      throw new UnauthorizedException('Refresh token is not found');
     }
     console.log('refresh Token:', refreshToken);
     const result = await this.refreshTokenService.check(refreshToken);
+
+    if (!result) {
+      console.log('Refresh token is invalid');
+      throw new UnauthorizedException('Refresh token is invalid');
+    }
     console.log('result:', result);
     return result;
   }
