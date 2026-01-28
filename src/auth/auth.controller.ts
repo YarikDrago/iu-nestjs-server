@@ -171,7 +171,10 @@ export class AuthController {
   }
 
   @Get('refresh-tokens')
-  async refreshTokens(@Req() req: Request) {
+  async refreshTokens(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     try {
       console.log('try to refresh tokens');
       const rawCookieHeader = req.headers.cookie ?? '';
@@ -184,7 +187,14 @@ export class AuthController {
       }
       console.log('refresh Token:', refreshToken);
       const result = await this.authService.refreshSession(refreshToken);
-      return result;
+
+      this.authService.writeTokensToCookies(
+        result.accessToken,
+        result.refreshToken,
+        res,
+      );
+
+      return true;
     } catch (e) {
       console.log('error:', e);
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
