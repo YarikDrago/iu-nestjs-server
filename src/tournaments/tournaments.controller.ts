@@ -67,8 +67,8 @@ export class TournamentsController {
         body.tournamentId,
       );
       console.log('tournament data:', tournamentResponse);
-      const data = (await tournamentResponse.json()) as FootballTournamentDto;
       if (!tournamentResponse) throw new Error('Tournament not found');
+      const data = (await tournamentResponse.json()) as FootballTournamentDto;
       const response = await this.tournamentsService.addNewTournament({
         external_id: data.id,
         name: data.name,
