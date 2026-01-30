@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UserStatus } from './entities/user-status.entity';
 import { UserActivationLink } from './entities/user-activation-links.entity';
@@ -27,8 +27,16 @@ export class UsersService {
     return result;
   }
 
-  async findUserByEmail(email: string) {
-    return await this.usersRepository.findOne({ where: { email } });
+  async findUserByEmail(email: string, isExtended: boolean = false) {
+    const options: FindOneOptions<User> = {
+      where: { email },
+    };
+    if (isExtended) {
+      options.relations = {
+        userRoles: { role: true },
+      };
+    }
+    return await this.usersRepository.findOne(options);
   }
 
   async addNewUser(dto: RegisterUserDto): Promise<User> {

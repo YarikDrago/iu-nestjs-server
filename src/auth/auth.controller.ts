@@ -44,7 +44,7 @@ export class AuthController {
         );
       }
       console.log('dto:', dto);
-      const user = await this.usersService.findUserByEmail(dto.email);
+      const user = await this.usersService.findUserByEmail(dto.email, true);
       if (!user) {
         console.log('user not found');
         throw new HttpException(
@@ -53,6 +53,14 @@ export class AuthController {
         );
       }
       console.log('user:', user);
+      let roles: string[] = [];
+      if (user.userRoles === undefined) {
+        console.log("ERROR: userRoles is undefined. User's roles are not set.");
+      } else {
+        roles = user.userRoles.map((ur) => ur.role.name);
+      }
+
+      console.log('user roles:', roles);
       if (user.status.name === 'inactive') {
         throw new HttpException(
           'Incorrect credentials',
@@ -86,6 +94,7 @@ export class AuthController {
 
       return {
         nickname: user.nickname,
+        roles: roles,
       };
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
