@@ -30,7 +30,7 @@ export class TournamentsController {
       console.log('tournaments data:', response);
       const data = response.map((tournament) => ({
         name: tournament.name,
-        isActive: tournament.isActive,
+        // isActive: tournament.isActive,
       }));
       return data;
     } catch (e) {
@@ -65,10 +65,10 @@ export class TournamentsController {
       const response = await this.tournamentsService.addNewTournament({
         external_id: data.id,
         name: data.name,
-        created_at: new Date(),
-        updated_at: new Date(),
-        source: 'football',
-        isActive: true,
+        // created_at: new Date(),
+        // updated_at: new Date(),
+        // source: 'football',
+        // isActive: true,
       });
       console.log('tournament successfully created');
       return response;

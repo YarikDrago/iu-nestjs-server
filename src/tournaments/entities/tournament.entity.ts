@@ -13,18 +13,16 @@ export class Tournaments {
   @MaxLength(50)
   name: string;
 
-  @Column()
-  created_at: Date;
-
-  @Column()
-  updated_at: Date;
-
-  @Column()
-  @MaxLength(100)
-  source: string;
-
-  @Column()
-  isActive: boolean;
-
-  // TODO add season
+  // @Column()
+  // created_at: Date;
+  //
+  // @Column()
+  // updated_at: Date;
+  //
+  // @Column()
+  // @MaxLength(100)
+  // source: string;
+  //
+  // @Column()
+  // isActive: boolean;
 }
