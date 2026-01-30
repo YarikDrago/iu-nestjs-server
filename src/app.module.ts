@@ -13,6 +13,8 @@ import { FootballModule } from './football/football.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { Tournaments } from './tournaments/entities/tournament.entity';
 import { AuthModule } from './auth/auth.module';
+import { UserRoles } from './users/entities/user-roles.entity';
+import { UserRoleNames } from './users/entities/user-role-names.entity';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { AuthModule } from './auth/auth.module';
         User,
         UserStatus,
         UserActivationLink,
+        UserRoles,
+        UserRoleNames,
         RefreshToken,
         Tournaments,
       ],
