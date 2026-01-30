@@ -88,6 +88,7 @@ export class AuthController {
         nickname: user.nickname,
       };
     } catch (e) {
+      console.log('ERROR:', (e as Error).message);
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
     }
   }
