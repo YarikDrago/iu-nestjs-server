@@ -8,13 +8,14 @@ import {
 } from 'typeorm';
 import { UserStatus } from './user-status.entity';
 import { UserActivationLink } from './user-activation-links.entity';
+import { UserRoles } from './user-roles.entity';
 
 @Entity({ name: 'users' })
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', unique: true })
   email: string;
 
   @Column()
@@ -33,4 +34,7 @@ export class User {
     (activationLink) => activationLink.user_id,
   )
   activationLinks: UserActivationLink[];
+
+  @OneToMany(() => UserRoles, (ur) => ur.user)
+  userRoles!: UserRoles[];
 }
