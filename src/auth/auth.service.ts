@@ -7,7 +7,8 @@ import {
 import { RefreshTokenService } from '../refreshToken/refresh-token.service';
 import { UsersService } from '../users/users.service';
 import * as jwt from 'jsonwebtoken';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
+import * as cookie from 'cookie';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,18 @@ export class AuthService {
     private readonly refreshTokenService: RefreshTokenService,
     private readonly usersService: UsersService,
   ) {}
+
+  private getCookieOrThrow(req: Request, name: string): string {
+    const rawCookieHeader = req.headers.cookie ?? '';
+    const cookies = cookie.parse(rawCookieHeader);
+    const value = cookies[name];
+
+    if (!value) {
+      throw new UnauthorizedException(`${name} is not found`);
+    }
+
+    return value;
+  }
 
   checkAccessToken(accessToken: string) {
     console.log('access Token:', accessToken);
@@ -33,6 +46,12 @@ export class AuthService {
       console.log('access token is invalid:', (e as Error).message);
       throw new UnauthorizedException('Access token is invalid');
     }
+  }
+
+  checkAccessTokenFromRequest(req: Request): true {
+    const accessToken = this.getCookieOrThrow(req, 'accessToken');
+    this.checkAccessToken(accessToken);
+    return true;
   }
 
   async refreshSession(refreshToken: string) {

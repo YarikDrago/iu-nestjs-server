@@ -6,13 +6,11 @@ import {
   HttpStatus,
   Post,
   Req,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
 import { FootballTournamentGeneralDto } from '../football/dto/football-tournament-general.dto';
 import { AuthService } from '../auth/auth.service';
 import type { Request } from 'express';
-import * as cookie from 'cookie';
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -25,15 +23,9 @@ export class TournamentsController {
   async showAllTournaments(@Req() req: Request) {
     try {
       console.log('try to show all tournaments');
-      // TODO
-      const rawCookieHeader = req.headers.cookie ?? '';
-      const cookies = cookie.parse(rawCookieHeader);
-      const accessToken = cookies['accessToken'];
-      if (!accessToken) {
-        console.log('access Token is not found');
-        throw new UnauthorizedException('Access token is not found 4');
-      }
-      this.authService.checkAccessToken(accessToken);
+
+      this.authService.checkAccessTokenFromRequest(req);
+
       const response = await this.tournamentsService.getAllTournaments();
       console.log('tournaments data:', response);
       const data = response.map((tournament) => ({
