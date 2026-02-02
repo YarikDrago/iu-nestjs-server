@@ -147,7 +147,25 @@ export class AuthController {
   @Get('check-access-token')
   checkAccessToken(@Req() req: Request) {
     console.log('try to check access token');
-    return this.authService.checkAccessTokenFromRequest(req);
+    this.authService.checkAccessTokenFromRequest(req);
+    return true;
+  }
+
+  @Get('me')
+  async me(@Req() req: Request) {
+    console.log('try to get user data (controller)');
+    const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+    const email = tokenPayload.email;
+    const user = await this.usersService.findUserByEmail(email, true);
+    if (!user) {
+      console.log('User not found');
+      throw new UnauthorizedException('User not found');
+    }
+    console.log('user:', user);
+    return {
+      nickname: user.nickname,
+      roles: user.userRoles.map((ur) => ur.role.name),
+    };
   }
 
   @Get('check-refresh-token')
