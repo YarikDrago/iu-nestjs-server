@@ -5,7 +5,7 @@ import { RefreshToken } from './refresh-token.entity';
 import { Repository } from 'typeorm';
 import { createHmac } from 'node:crypto';
 
-interface TokenPayload {
+export interface TokenPayload {
   email: string;
   nickname: string;
 }

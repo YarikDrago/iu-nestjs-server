@@ -4,7 +4,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { RefreshTokenService } from '../refreshToken/refresh-token.service';
+import {
+  RefreshTokenService,
+  TokenPayload,
+} from '../refreshToken/refresh-token.service';
 import { UsersService } from '../users/users.service';
 import * as jwt from 'jsonwebtoken';
 import type { Response, Request } from 'express';
@@ -41,17 +44,16 @@ export class AuthService {
     try {
       jwt.verify(accessToken, secret);
       console.log('access token is valid');
-      return true;
+      return jwt.decode(accessToken) as TokenPayload;
     } catch (e) {
       console.log('access token is invalid:', (e as Error).message);
       throw new UnauthorizedException('Access token is invalid');
     }
   }
 
-  checkAccessTokenFromRequest(req: Request): true {
+  checkAccessTokenFromRequest(req: Request): TokenPayload {
     const accessToken = this.getCookieOrThrow(req, 'accessToken');
-    this.checkAccessToken(accessToken);
-    return true;
+    return this.checkAccessToken(accessToken);
   }
 
   async refreshSession(refreshToken: string) {
