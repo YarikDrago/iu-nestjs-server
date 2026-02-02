@@ -147,15 +147,7 @@ export class AuthController {
   @Get('check-access-token')
   checkAccessToken(@Req() req: Request) {
     console.log('try to check access token');
-    const rawCookieHeader = req.headers.cookie ?? '';
-    const cookies = cookie.parse(rawCookieHeader);
-    const accessToken = cookies['accessToken'];
-    if (!accessToken) {
-      console.log('access Token is not found');
-      throw new UnauthorizedException('Access token is not found');
-    }
-    this.authService.checkAccessToken(accessToken);
-    return true;
+    return this.authService.checkAccessTokenFromRequest(req);
   }
 
   @Get('check-refresh-token')
