@@ -199,6 +199,7 @@ export class AuthController {
       return true;
     } catch (e) {
       console.log('error:', e);
+      if (e instanceof HttpException) throw e;
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
     }
   }
