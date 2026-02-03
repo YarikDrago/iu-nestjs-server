@@ -5,12 +5,14 @@ import { TournamentsController } from './tournaments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tournaments } from './entities/tournament.entity';
 import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Tournaments]),
     FootballModule,
     AuthModule,
+    UsersModule,
   ],
   providers: [TournamentsService],
   exports: [TournamentsService],

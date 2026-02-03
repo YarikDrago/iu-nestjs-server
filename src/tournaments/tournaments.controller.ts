@@ -6,18 +6,50 @@ import {
   HttpStatus,
   Post,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
 import { FootballTournamentGeneralDto } from '../football/dto/football-tournament-general.dto';
 import { AuthService } from '../auth/auth.service';
 import type { Request } from 'express';
+import { FootballService } from '../football/football.service';
+import { UsersService } from '../users/users.service';
 
 @Controller('tournaments')
 export class TournamentsController {
   constructor(
     private readonly tournamentsService: TournamentsService,
+    private readonly footballService: FootballService,
     private readonly authService: AuthService,
+    private readonly usersService: UsersService,
   ) {}
+
+  /* Get all tournaments from the API. */
+  @Get('api')
+  async showAllTournamentsApi(@Req() req: Request) {
+    try {
+      console.log('try to show all tournaments from API (controller)');
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const email = tokenPayload.email;
+      const user = await this.usersService.findUserByEmail(email, true);
+      if (!user) {
+        console.log('User not found');
+        throw new UnauthorizedException('User not found');
+      }
+      const roles = user.userRoles.map((ur) => ur.role.name);
+
+      if (!roles.includes('admin')) {
+        throw new UnauthorizedException(
+          'User does not have permission to access this route. Please contact the administrator.',
+        );
+      }
+
+      return this.footballService.getCompetitions();
+    } catch (e) {
+      console.log('error:', e);
+      throw e;
+    }
+  }
 
   @Get('')
   async showAllTournaments(@Req() req: Request) {
