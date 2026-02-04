@@ -6,6 +6,7 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { FootballCompetitionsDto } from './dto/football-competitions.dto';
 import { validate } from 'class-validator';
+import { FootballCompetitionMatchesDto } from './dto/football-competition-matches.dto';
 
 @Injectable()
 export class FootballService {
@@ -62,11 +63,12 @@ export class FootballService {
     }
   }
 
-  async getCompetitionData(tournamentId: string) {
+  // TODO rename to getCompetitionMatches
+  async getCompetitionData(competitionId: string) {
     if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
     if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
     const response = await fetch(
-      `${process.env.FOOTBALL_API_URL}/competitions/${tournamentId}`,
+      `${process.env.FOOTBALL_API_URL}/competitions/${competitionId}/matches`,
       {
         method: 'GET',
         headers: {
@@ -85,6 +87,21 @@ export class FootballService {
       );
     }
 
-    return response;
+    const raw: unknown = await response.json();
+    const dto = plainToInstance(FootballCompetitionMatchesDto, raw);
+
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      forbidUnknownValues: true, // TODO
+    });
+
+    if (errors.length > 0) {
+      throw new ServiceUnavailableException(
+        'Football API returned invalid data',
+      );
+    }
+
+    return dto;
   }
 }
