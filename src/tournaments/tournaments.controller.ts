@@ -79,34 +79,35 @@ export class TournamentsController {
     }
   }
 
-  @Post('add')
-  async createTournament(@Body() body: { tournamentId: string }) {
-    try {
-      console.log('try to create tournament');
-      console.log('body:', body);
-      if (!body || !body.tournamentId)
-        throw new Error('Tournament ID is required');
-      console.log('tournament ID: ', body.tournamentId);
-      const tournamentResponse = await this.tournamentsService.getTournament(
-        body.tournamentId,
-      );
-      console.log('tournament data:', tournamentResponse);
-      if (!tournamentResponse) throw new Error('Tournament not found');
-      const data =
-        (await tournamentResponse.json()) as FootballTournamentGeneralDto;
-      const response = await this.tournamentsService.addNewTournament({
-        external_id: data.id,
-        name: data.name,
-        // created_at: new Date(),
-        // updated_at: new Date(),
-        // source: 'football',
-        // isActive: true,
-      });
-      console.log('tournament successfully created');
-      return response;
-    } catch (e) {
-      console.log('ERROR:', (e as Error).message);
-      throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
-    }
-  }
+  // TODO rewrite
+  // @Post('add')
+  // async createTournament(@Body() body: { tournamentId: string }) {
+  //   try {
+  //     console.log('try to create tournament');
+  //     console.log('body:', body);
+  //     if (!body || !body.tournamentId)
+  //       throw new Error('Tournament ID is required');
+  //     console.log('tournament ID: ', body.tournamentId);
+  //     const tournamentResponse = await this.tournamentsService.getTournament(
+  //       body.tournamentId,
+  //     );
+  //     console.log('tournament data:', tournamentResponse);
+  //     if (!tournamentResponse) throw new Error('Tournament not found');
+  //     const data =
+  //       (await tournamentResponse.json()) as FootballTournamentGeneralDto;
+  //     const response = await this.tournamentsService.addNewTournament({
+  //       external_id: data.id,
+  //       name: data.name,
+  //       // created_at: new Date(),
+  //       // updated_at: new Date(),
+  //       // source: 'football',
+  //       // isActive: true,
+  //     });
+  //     console.log('tournament successfully created');
+  //     return response;
+  //   } catch (e) {
+  //     console.log('ERROR:', (e as Error).message);
+  //     throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
+  //   }
+  // }
 }
