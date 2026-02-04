@@ -1,15 +1,15 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpException,
   HttpStatus,
-  Post,
+  Param,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
-import { FootballTournamentGeneralDto } from '../football/dto/football-tournament-general.dto';
 import { AuthService } from '../auth/auth.service';
 import type { Request } from 'express';
 import { FootballService } from '../football/football.service';
@@ -45,6 +45,41 @@ export class TournamentsController {
       }
 
       return this.footballService.getCompetitions();
+    } catch (e) {
+      console.log('error:', e);
+      throw e;
+    }
+  }
+
+  @Get('api/competitions/:id')
+  async getCompetitionById(
+    @Req() req: Request,
+    @Param('id') competitionId: string,
+  ) {
+    try {
+      console.log('try to GET a competition from API (controller)');
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const email = tokenPayload.email;
+      const user = await this.usersService.findUserByEmail(email, true);
+      if (!user) {
+        console.log('User not found');
+        throw new UnauthorizedException('User not found');
+      }
+      const roles = user.userRoles.map((ur) => ur.role.name);
+
+      if (!roles.includes('admin')) {
+        throw new UnauthorizedException(
+          'User does not have permission to access this route. Please contact the administrator.',
+        );
+      }
+
+      if (!competitionId)
+        throw new BadRequestException({
+          message: 'Competition ID is required',
+          code: 'BAD_REQUEST',
+        });
+
+      return await this.footballService.getCompetitionData(competitionId);
     } catch (e) {
       console.log('error:', e);
       throw e;
