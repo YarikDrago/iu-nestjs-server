@@ -9,47 +9,8 @@ import {
 import { Type } from 'class-transformer';
 import { FootballAreaDto } from './football-area.dto';
 import { FootballSeasonDto } from './football-season.dto';
-import { FootballCompetitionDto } from './football-competition.dto';
 import { FootballTeamDto } from './football-team.dto';
-
-export class FootballMatchDto {
-  @ValidateNested()
-  @Type(() => FootballAreaDto)
-  area?: FootballAreaDto;
-
-  @ValidateNested()
-  @Type(() => FootballCompetitionDto)
-  competition!: FootballCompetitionDto;
-
-  @ValidateNested()
-  @Type(() => FootballSeasonDto)
-  season!: FootballSeasonDto;
-
-  @IsInt()
-  id!: number;
-
-  @IsString()
-  utcDate!: string;
-
-  @IsString()
-  status!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  lastUpdated!: string;
-
-  @ValidateNested()
-  @Type(() => FootballTeamDto)
-  homeTeam!: FootballTeamDto;
-
-  @ValidateNested()
-  @Type(() => FootballTeamDto)
-  awayTeam!: FootballTeamDto;
-
-  @ValidateNested()
-  @Type(() => FootballScoreDto)
-  score!: FootballScoreDto;
-}
+import { FootballCompetitionMatchDto } from './football-competition-match.dto';
 
 class FootballMatchTimeScoreDto {
   @ValidateIf((_, value) => value !== null)
@@ -88,4 +49,43 @@ class FootballScoreDto {
   @ValidateNested()
   @Type(() => FootballMatchTimeScoreDto)
   penalties?: FootballMatchTimeScoreDto;
+}
+
+export class FootballMatchDto {
+  @ValidateNested()
+  @Type(() => FootballAreaDto)
+  area?: FootballAreaDto;
+
+  @ValidateNested()
+  @Type(() => FootballCompetitionMatchDto)
+  competition!: FootballCompetitionMatchDto;
+
+  @ValidateNested()
+  @Type(() => FootballSeasonDto)
+  season!: FootballSeasonDto;
+
+  @IsInt()
+  id!: number;
+
+  @IsString()
+  utcDate!: string;
+
+  @IsString()
+  status!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  lastUpdated!: string;
+
+  @ValidateNested()
+  @Type(() => FootballTeamDto)
+  homeTeam!: FootballTeamDto;
+
+  @ValidateNested()
+  @Type(() => FootballTeamDto)
+  awayTeam!: FootballTeamDto;
+
+  @ValidateNested()
+  @Type(() => FootballScoreDto)
+  score!: FootballScoreDto;
 }
