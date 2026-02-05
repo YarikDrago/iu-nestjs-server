@@ -13,6 +13,9 @@ export class Tournaments {
   @MaxLength(50)
   name: string;
 
+  @Column({ type: 'boolean', default: false })
+  isObservable: boolean;
+
   // @Column()
   // created_at: Date;
   //
