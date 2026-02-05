@@ -1,4 +1,11 @@
-import { IsInt, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { FootballAreaDto } from './football-area.dto';
 import { Type } from 'class-transformer';
 import { FootballSeasonDto } from './football-season.dto';
@@ -36,4 +43,16 @@ export class FootballCompetitionDto {
 
   @IsString()
   lastUpdated!: string;
+
+  /**
+   * Local fields (not API) for UI/client.
+   * Can be added manually
+   */
+  @IsOptional()
+  @IsBoolean()
+  inDb?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isObservable?: boolean;
 }

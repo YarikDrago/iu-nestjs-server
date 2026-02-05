@@ -43,8 +43,23 @@ export class TournamentsController {
           'User does not have permission to access this route. Please contact the administrator.',
         );
       }
+      const apiCompetitions = await this.footballService.getCompetitions();
+      const dbCompetitions = await this.tournamentsService.getAllTournaments();
 
-      return this.footballService.getCompetitions();
+      apiCompetitions.competitions.forEach((competition) => {
+        /* Add default states for each competition. */
+        competition.inDb = false;
+        competition.isObservable = false;
+        const dbCompetition = dbCompetitions.find(
+          (comp) => comp.external_id === competition.id,
+        );
+        if (dbCompetition !== undefined) {
+          competition.inDb = true;
+          competition.isObservable = dbCompetition.isObservable;
+        }
+      });
+
+      return apiCompetitions;
     } catch (e) {
       console.log('error:', e);
       throw e;
