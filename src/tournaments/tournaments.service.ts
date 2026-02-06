@@ -23,6 +23,13 @@ export class TournamentsService {
     return response;
   }
 
+  async findTournamentInDbById(externalId: number) {
+    console.log('try to find tournament in DB (service)');
+    return await this.tournamentsRepo.findOne({
+      where: { external_id: externalId },
+    });
+  }
+
   async addNewTournament(payload: Omit<Tournaments, 'id'>) {
     console.log('try to add new tournament (service)');
     const tournament = this.tournamentsRepo.create(payload);
