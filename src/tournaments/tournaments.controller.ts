@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  Post,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -129,35 +130,74 @@ export class TournamentsController {
     }
   }
 
-  // TODO rewrite
-  // @Post('add')
-  // async createTournament(@Body() body: { tournamentId: string }) {
-  //   try {
-  //     console.log('try to create tournament');
-  //     console.log('body:', body);
-  //     if (!body || !body.tournamentId)
-  //       throw new Error('Tournament ID is required');
-  //     console.log('tournament ID: ', body.tournamentId);
-  //     const tournamentResponse = await this.tournamentsService.getTournament(
-  //       body.tournamentId,
-  //     );
-  //     console.log('tournament data:', tournamentResponse);
-  //     if (!tournamentResponse) throw new Error('Tournament not found');
-  //     const data =
-  //       (await tournamentResponse.json()) as FootballTournamentGeneralDto;
-  //     const response = await this.tournamentsService.addNewTournament({
-  //       external_id: data.id,
-  //       name: data.name,
-  //       // created_at: new Date(),
-  //       // updated_at: new Date(),
-  //       // source: 'football',
-  //       // isActive: true,
-  //     });
-  //     console.log('tournament successfully created');
-  //     return response;
-  //   } catch (e) {
-  //     console.log('ERROR:', (e as Error).message);
-  //     throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
-  //   }
-  // }
+  @Post('add')
+  async createTournament(
+    @Req() req: Request,
+    @Body() body: { competitionId: string },
+  ) {
+    try {
+      console.log('try to add tournament');
+
+      this.authService.checkAccessTokenFromRequest(req);
+
+      // TODO write separate method for checking permissions (role)
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const email = tokenPayload.email;
+      const user = await this.usersService.findUserByEmail(email, true);
+      if (!user) {
+        console.log('User not found');
+        throw new UnauthorizedException('User not found');
+      }
+      const roles = user.userRoles.map((ur) => ur.role.name);
+
+      if (!roles.includes('admin')) {
+        throw new UnauthorizedException(
+          'User does not have permission to access this route. Please contact the administrator.',
+        );
+      }
+
+      console.log('body:', body);
+      if (!body || !body.competitionId)
+        throw new Error('Tournament ID is required');
+      console.log('tournament ID: ', body.competitionId);
+      const competitionId = body.competitionId;
+      if (!competitionId)
+        throw new BadRequestException({
+          message: 'Tournament ID is required',
+          code: 'BAD_REQUEST',
+        });
+
+      if (isNaN(Number(competitionId)))
+        throw new Error('Invalid tournament ID');
+
+      /* try to find tournament in the DB. If it exists, throw an error. */
+      const dbResponse = await this.tournamentsService.findTournamentInDbById(
+        Number(competitionId),
+      );
+      console.log('tournament data:', dbResponse);
+
+      if (dbResponse !== null) {
+        throw new Error('Tournament already exists in DB.');
+      }
+      console.log('tournament does not exist in DB.');
+
+      const tournamentResponse =
+        await this.footballService.getCompetitionData(competitionId);
+
+      const response = await this.tournamentsService.addNewTournament({
+        external_id: Number(competitionId),
+        name: tournamentResponse.competition.name,
+        isObservable: false,
+      });
+
+      console.log('Response:', response);
+
+      return response;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+      if (e instanceof HttpException) {
+        throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
+      }
+    }
+  }
 }
