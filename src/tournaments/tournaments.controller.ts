@@ -8,7 +8,6 @@ import {
   Param,
   Post,
   Req,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
 import { AuthService } from '../auth/auth.service';
@@ -30,20 +29,9 @@ export class TournamentsController {
   async showAllTournamentsApi(@Req() req: Request) {
     try {
       console.log('try to show all tournaments from API (controller)');
-      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
-      const email = tokenPayload.email;
-      const user = await this.usersService.findUserByEmail(email, true);
-      if (!user) {
-        console.log('User not found');
-        throw new UnauthorizedException('User not found');
-      }
-      const roles = user.userRoles.map((ur) => ur.role.name);
 
-      if (!roles.includes('admin')) {
-        throw new UnauthorizedException(
-          'User does not have permission to access this route. Please contact the administrator.',
-        );
-      }
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
+
       const apiCompetitions = await this.footballService.getCompetitions();
       const dbCompetitions = await this.tournamentsService.getAllTournaments();
 
@@ -74,20 +62,7 @@ export class TournamentsController {
   ) {
     try {
       console.log('try to GET a competition from API (controller)');
-      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
-      const email = tokenPayload.email;
-      const user = await this.usersService.findUserByEmail(email, true);
-      if (!user) {
-        console.log('User not found');
-        throw new UnauthorizedException('User not found');
-      }
-      const roles = user.userRoles.map((ur) => ur.role.name);
-
-      if (!roles.includes('admin')) {
-        throw new UnauthorizedException(
-          'User does not have permission to access this route. Please contact the administrator.',
-        );
-      }
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
 
       if (!competitionId)
         throw new BadRequestException({
@@ -139,22 +114,7 @@ export class TournamentsController {
       console.log('try to add tournament');
 
       this.authService.checkAccessTokenFromRequest(req);
-
-      // TODO write separate method for checking permissions (role)
-      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
-      const email = tokenPayload.email;
-      const user = await this.usersService.findUserByEmail(email, true);
-      if (!user) {
-        console.log('User not found');
-        throw new UnauthorizedException('User not found');
-      }
-      const roles = user.userRoles.map((ur) => ur.role.name);
-
-      if (!roles.includes('admin')) {
-        throw new UnauthorizedException(
-          'User does not have permission to access this route. Please contact the administrator.',
-        );
-      }
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
 
       console.log('body:', body);
       if (!body || !body.competitionId)

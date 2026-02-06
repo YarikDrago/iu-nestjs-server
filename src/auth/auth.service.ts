@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service';
 import * as jwt from 'jsonwebtoken';
 import type { Response, Request } from 'express';
 import * as cookie from 'cookie';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -122,5 +123,26 @@ export class AuthService {
       maxAge: resetCookie ? 0 : 7 * 24 * 60 * 60 * 1000, // 7d (подстрой под свою политику)
       path: '/',
     });
+  }
+
+  async checkUserRolesByRequest(req: Request, requiredRoles: string[]) {
+    const tokenPayload = this.checkAccessTokenFromRequest(req);
+    const email = tokenPayload.email;
+    const user = await this.usersService.findUserByEmail(email, true);
+    if (!user) {
+      console.log('User not found');
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!this.checkUserRoles(user, requiredRoles)) {
+      throw new UnauthorizedException(
+        'User does not have permission to access this route. Please contact the administrator.',
+      );
+    }
+  }
+
+  checkUserRoles(user: User, requiredRoles: string[]): boolean {
+    const roles = user.userRoles.map((ur) => ur.role.name);
+    return requiredRoles.every((role) => roles.includes(role));
   }
 }
