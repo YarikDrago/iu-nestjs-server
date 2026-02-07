@@ -35,4 +35,11 @@ export class TournamentsService {
     const tournament = this.tournamentsRepo.create(payload);
     return await this.tournamentsRepo.save(tournament);
   }
+
+  async deleteTournament(externalId: number) {
+    console.log('try to delete tournament (service)');
+    return await this.tournamentsRepo.delete({
+      external_id: externalId,
+    });
+  }
 }

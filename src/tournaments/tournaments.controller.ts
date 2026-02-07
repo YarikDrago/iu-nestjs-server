@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
@@ -94,6 +95,7 @@ export class TournamentsController {
     } catch (e) {
       console.log('error:', e);
 
+      // TODO FIX
       if (e instanceof HttpException) {
         throw e;
       }
@@ -158,6 +160,34 @@ export class TournamentsController {
       if (e instanceof HttpException) {
         throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
       }
+    }
+  }
+
+  @Delete(':externalId')
+  async deleteTournament(
+    @Req() req: Request,
+    @Param('externalId') externalId: string,
+  ) {
+    try {
+      console.log('try to delete tournament:', externalId);
+      this.authService.checkAccessTokenFromRequest(req);
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
+      const response = await this.tournamentsService.deleteTournament(
+        Number(externalId),
+      );
+      console.log('response:', response);
+      return response;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
