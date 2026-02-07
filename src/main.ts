@@ -8,7 +8,7 @@ async function bootstrap() {
   // Разрешаем запросы с Next.js
   app.enableCors({
     origin: ['http://localhost:6600', 'http://localhost:3000'], // адрес вашего Next.js
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH', 'HEAD', 'OPTIONS'],
     credentials: true,
   });
 
