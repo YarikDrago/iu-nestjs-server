@@ -42,4 +42,15 @@ export class TournamentsService {
       external_id: externalId,
     });
   }
+
+  async updateTournamentObservableStatusByExternalId(
+    externalId: number,
+    isObservable: boolean,
+  ) {
+    console.log('try to update tournament observable status (service)');
+    return await this.tournamentsRepo.update(
+      { external_id: externalId },
+      { isObservable: isObservable },
+    );
+  }
 }

@@ -7,6 +7,7 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Req,
 } from '@nestjs/common';
@@ -175,6 +176,36 @@ export class TournamentsController {
       const response = await this.tournamentsService.deleteTournament(
         Number(externalId),
       );
+      console.log('response:', response);
+      return response;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch(':externalId')
+  async updateTournamentObservableStatusByExternalId(
+    @Req() req: Request,
+    @Param('externalId') externalId: string,
+    @Body() body: { isObservable: boolean },
+  ) {
+    try {
+      this.authService.checkAccessTokenFromRequest(req);
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
+      const response =
+        await this.tournamentsService.updateTournamentObservableStatusByExternalId(
+          Number(externalId),
+          body.isObservable,
+        );
       console.log('response:', response);
       return response;
     } catch (e) {
