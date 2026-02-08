@@ -63,8 +63,7 @@ export class FootballService {
     }
   }
 
-  // TODO rename to getCompetitionMatches
-  async getCompetitionData(competitionId: string) {
+  async getCompetitionMatches(competitionId: string) {
     if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
     if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
     const response = await fetch(

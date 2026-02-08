@@ -18,7 +18,7 @@ async function bootstrap() {
   const footballService = app.get(FootballService);
 
   setInterval(() => {
-    void footballService.getCompetitionData('2018');
+    void footballService.getCompetitionMatches('2018');
   }, 60 * 1000);
 }
 bootstrap();

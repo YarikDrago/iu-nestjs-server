@@ -19,7 +19,7 @@ export class TournamentsService {
 
   async getTournament(externalId: string) {
     console.log('try to get tournaments (service)');
-    const response = await this.footballService.getCompetitionData(externalId);
+    const response = await this.footballService.getCompetitionMatches(externalId);
     return response;
   }
 

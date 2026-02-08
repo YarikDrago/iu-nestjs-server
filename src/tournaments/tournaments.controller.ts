@@ -72,7 +72,7 @@ export class TournamentsController {
           code: 'BAD_REQUEST',
         });
 
-      return await this.footballService.getCompetitionData(competitionId);
+      return await this.footballService.getCompetitionMatches(competitionId);
     } catch (e) {
       console.log('error:', e);
       throw e;
@@ -145,7 +145,7 @@ export class TournamentsController {
       console.log('tournament does not exist in DB.');
 
       const tournamentResponse =
-        await this.footballService.getCompetitionData(competitionId);
+        await this.footballService.getCompetitionMatches(competitionId);
 
       const response = await this.tournamentsService.addNewTournament({
         external_id: Number(competitionId),
