@@ -38,8 +38,12 @@ export class FootballCompetitionDto {
   @Type(() => FootballSeasonDto)
   currentSeason!: FootballSeasonDto;
 
-  @IsInt()
-  numberOfAvailableSeasons!: number;
+  @ValidateNested()
+  @Type(() => FootballSeasonDto)
+  seasons!: FootballSeasonDto[];
+
+  // @IsInt()
+  // numberOfAvailableSeasons!: number;
 
   @IsString()
   lastUpdated!: string;
