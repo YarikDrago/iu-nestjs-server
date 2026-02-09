@@ -15,6 +15,7 @@ import { Tournaments } from './tournaments/entities/tournament.entity';
 import { AuthModule } from './auth/auth.module';
 import { UserRoles } from './users/entities/user-roles.entity';
 import { UserRoleNames } from './users/entities/user-role-names.entity';
+import { Seasons } from './tournaments/entities/seasons.entity';
 
 @Module({
   imports: [
@@ -34,9 +35,13 @@ import { UserRoleNames } from './users/entities/user-role-names.entity';
         UserRoleNames,
         RefreshToken,
         Tournaments,
+        Seasons, // Competition Seasons
       ],
       // synchronize: true, // WARNING!
       timezone: 'Z',
+      extra: {
+        initSql: "SET time_zone = '+00:00'",
+      },
 
       ssl: process.env.DB_SSL_CA
         ? {
