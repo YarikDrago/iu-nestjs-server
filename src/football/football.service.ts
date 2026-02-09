@@ -7,6 +7,7 @@ import { plainToInstance } from 'class-transformer';
 import { FootballCompetitionsDto } from './dto/football-competitions.dto';
 import { validate } from 'class-validator';
 import { FootballCompetitionMatchesDto } from './dto/football-competition-matches.dto';
+import { FootballCompetitionDto } from './dto/football-competition.dto';
 
 @Injectable()
 export class FootballService {
@@ -61,6 +62,47 @@ export class FootballService {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  async getCompetition(competitionId: string) {
+    if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
+    if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
+    const response = await fetch(
+      `${process.env.FOOTBALL_API_URL}/competitions/${competitionId}`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Auth-Token': process.env.FOOTBALL_API_TOKEN,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => '');
+      this.logger.warn(
+        `Football API error: ${response.status} ${response.statusText}. Body: ${bodyText}`,
+      );
+      throw new ServiceUnavailableException(
+        `Football API responded with ${response.status}`,
+      );
+    }
+
+    const raw: unknown = await response.json();
+    const dto = plainToInstance(FootballCompetitionDto, raw);
+
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      forbidUnknownValues: true, // TODO
+    });
+
+    if (errors.length > 0) {
+      throw new ServiceUnavailableException(
+        'Football API returned invalid data',
+      );
+    }
+
+    return dto;
   }
 
   async getCompetitionMatches(competitionId: string) {
