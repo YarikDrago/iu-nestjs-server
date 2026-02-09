@@ -6,10 +6,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tournaments } from './entities/tournament.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
+import { Seasons } from './entities/seasons.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tournaments]),
+    TypeOrmModule.forFeature([Tournaments, Seasons]),
     FootballModule,
     AuthModule,
     UsersModule,

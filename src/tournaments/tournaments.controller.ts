@@ -192,6 +192,27 @@ export class TournamentsController {
     }
   }
 
+  @Patch('seasons')
+  async updateSeasons(@Req() req: Request) {
+    try {
+      console.log('try to update seasons');
+      this.authService.checkAccessTokenFromRequest(req);
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
+
+      return this.tournamentsService.updateSeasonsOfCompetitions();
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Patch(':externalId')
   async updateTournamentObservableStatusByExternalId(
     @Req() req: Request,
