@@ -105,8 +105,13 @@ export class FootballService {
     return dto;
   }
 
-  async getCompetitionMatches(competitionId: string) {
-    return await this.getCompetitionMatchesById(competitionId);
+  async getCompetitionMatches(competitionsIds: string[]) {
+    const uniqueIds = Array.from(new Set(competitionsIds)).filter(Boolean);
+    if (uniqueIds.length === 0) return [];
+
+    return Promise.all(
+      uniqueIds.map((id) => this.getCompetitionMatchesById(id)),
+    );
   }
 
   private async getCompetitionMatchesById(competitionId: string) {

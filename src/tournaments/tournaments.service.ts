@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Tournaments } from './entities/tournament.entity';
 import { FootballService } from '../football/football.service';
 import { Seasons } from './entities/seasons.entity';
@@ -12,6 +16,18 @@ export type UpsertSeasonInput = {
   startDate: Date;
   endDate: Date;
   isCurrent?: boolean;
+};
+
+export type UpsertMatchInput = {
+  externalId: number;
+  seasonExternalId: number;
+  tournamentExternalId: number;
+  homeTeam: string; // name of the team
+  awayTeam: string; // name of the team
+  startTime: Date | null;
+  status: string;
+  homeScore: number | null;
+  awayScore: number | null;
 };
 
 @Injectable()
@@ -117,5 +133,154 @@ export class TournamentsService {
       })),
       ['external_id'],
     );
+  }
+
+  async upsertMatches(inputs: UpsertMatchInput[]) {
+    if (inputs.length === 0) {
+      return { identifiers: [], generatedMaps: [], raw: [] };
+    }
+
+    /* Collect tournaments external IDs from the inputs */
+    const tournamentExternalIds = Array.from(
+      new Set(inputs.map((i) => i.tournamentExternalId)),
+    );
+
+    /* 1) Read tournaments by external_id (NO upsert) */
+    const tournaments = await this.tournamentsRepo.find({
+      select: { id: true, external_id: true },
+      where: { external_id: In(tournamentExternalIds) },
+    });
+
+    /* Create a map of tournaments by external_id to internal ID */
+    const tournamentIdByExternal = new Map<number, number>(
+      tournaments.map((t: Tournaments) => [t.external_id, t.id]),
+    );
+
+    const missingTournamentExternalIds = tournamentExternalIds.filter(
+      (extId) => !tournamentIdByExternal.has(extId),
+    );
+    if (missingTournamentExternalIds.length > 0) {
+      throw new NotFoundException(
+        `Tournaments not found for external_id: ${missingTournamentExternalIds.join(
+          ', ',
+        )}`,
+      );
+    }
+
+    // 2) Read seasons by (tournament_id, external_id) (NO upsert)
+    const requiredSeasonKeys = Array.from(
+      new Set(
+        inputs.map((i) => {
+          const tournamentId = tournamentIdByExternal.get(
+            i.tournamentExternalId,
+          )!;
+          return `${tournamentId}:${i.seasonExternalId}`;
+        }),
+      ),
+    );
+
+    const tournamentIds = Array.from(
+      new Set(
+        inputs.map((i) => tournamentIdByExternal.get(i.tournamentExternalId)!),
+      ),
+    );
+    const seasonExternalIds = Array.from(
+      new Set(inputs.map((i) => i.seasonExternalId)),
+    );
+
+    const seasons = await this.seasonsRepo.find({
+      select: { id: true, external_id: true, tournament_id: true },
+      where: {
+        tournament_id: In(tournamentIds),
+        external_id: In(seasonExternalIds),
+      },
+    });
+
+    const seasonIdByTournamentIdAndExternal = new Map<string, number>(
+      seasons.map((s: Seasons) => [
+        `${s.tournament_id}:${s.external_id}`,
+        s.id,
+      ]),
+    );
+
+    const missingSeasonKeys = requiredSeasonKeys.filter(
+      (k) => !seasonIdByTournamentIdAndExternal.has(k),
+    );
+    if (missingSeasonKeys.length > 0) {
+      throw new NotFoundException(
+        `Seasons not found for keys (tournament_id:season_external_id): ${missingSeasonKeys.join(
+          ', ',
+        )}`,
+      );
+    }
+
+    // 3) Upsert matches ONLY
+    const rows = inputs.map((match) => {
+      const tournamentId = tournamentIdByExternal.get(
+        match.tournamentExternalId,
+      );
+      if (!tournamentId) {
+        throw new BadRequestException(
+          `Internal error: tournamentId not resolved for external_id=${match.tournamentExternalId}`,
+        );
+      }
+
+      const seasonKey = `${tournamentId}:${match.seasonExternalId}`;
+      const seasonId = seasonIdByTournamentIdAndExternal.get(seasonKey);
+      if (!seasonId) {
+        throw new BadRequestException(
+          `Internal error: seasonId not resolved for key=${seasonKey}`,
+        );
+      }
+
+      return {
+        external_id: match.externalId,
+        tournament_id: tournamentId,
+        season_id: seasonId,
+        home_team: match.homeTeam,
+        away_team: match.awayTeam,
+        start_time: match.startTime,
+        status: match.status,
+        home_score: match.homeScore,
+        away_score: match.awayScore,
+      };
+    });
+
+    return this.matchesRepo.upsert(rows, ['external_id']);
+  }
+
+  /* Update matches of all observable tournaments. */
+  async updateMatchesOfCompetitions() {
+    console.log('try to update matches of competitions (service)');
+    const observableTournamentsExternalIds = (
+      await this.getAllObservableTournaments()
+    ).map((t) => String(t.external_id));
+
+    const competitionsMatchesDataApi =
+      await this.footballService.getCompetitionMatches(
+        observableTournamentsExternalIds,
+      );
+
+    const preparedMatchesData: UpsertMatchInput[] = [];
+
+    for (const competition of competitionsMatchesDataApi) {
+      for (const match of competition.matches) {
+        preparedMatchesData.push({
+          externalId: match.id,
+          seasonExternalId: match.season.id,
+          tournamentExternalId: match.competition.id,
+          homeTeam: match.homeTeam.name || '',
+          awayTeam: match.awayTeam.name || '',
+          startTime: new Date(match.utcDate),
+          status: match.status || '',
+          homeScore: match.score.fullTime.home,
+          awayScore: match.score.fullTime.away,
+        });
+      }
+    }
+
+    await this.upsertMatches(preparedMatchesData);
+
+    console.log('Matches were successfully updated!');
   }
 }

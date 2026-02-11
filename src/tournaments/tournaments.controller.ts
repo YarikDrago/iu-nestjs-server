@@ -16,6 +16,7 @@ import { AuthService } from '../auth/auth.service';
 import type { Request } from 'express';
 import { FootballService } from '../football/football.service';
 import { UsersService } from '../users/users.service';
+import { FootballCompetitionMatchesDto } from '../football/dto/football-competition-matches.dto';
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -61,7 +62,7 @@ export class TournamentsController {
   async getCompetitionById(
     @Req() req: Request,
     @Param('id') competitionId: string,
-  ) {
+  ): Promise<FootballCompetitionMatchesDto> {
     try {
       console.log('try to GET a competition from API (controller)');
       await this.authService.checkUserRolesByRequest(req, ['admin']);
@@ -72,7 +73,9 @@ export class TournamentsController {
           code: 'BAD_REQUEST',
         });
 
-      return await this.footballService.getCompetitionMatches(competitionId);
+      return (
+        await this.footballService.getCompetitionMatches([competitionId])
+      )[0];
     } catch (e) {
       console.log('error:', e);
       throw e;
@@ -214,6 +217,30 @@ export class TournamentsController {
     }
   }
 
+  @Patch('matches')
+  async updateMatches(@Req() req: Request) {
+    try {
+      console.log('try to update matches');
+      this.authService.checkAccessTokenFromRequest(req);
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
+
+      await this.tournamentsService.updateMatchesOfCompetitions();
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // MUST BE IN THE VERY END OF THE FILE!!!
   @Patch(':externalId')
   async updateTournamentObservableStatusByExternalId(
     @Req() req: Request,
