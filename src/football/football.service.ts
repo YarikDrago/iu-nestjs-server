@@ -106,8 +106,13 @@ export class FootballService {
   }
 
   async getCompetitionMatches(competitionId: string) {
+    return await this.getCompetitionMatchesById(competitionId);
+  }
+
+  private async getCompetitionMatchesById(competitionId: string) {
     if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
     if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
+
     const response = await fetch(
       `${process.env.FOOTBALL_API_URL}/competitions/${competitionId}/matches`,
       {
@@ -121,10 +126,10 @@ export class FootballService {
     if (!response.ok) {
       const bodyText = await response.text().catch(() => '');
       this.logger.warn(
-        `Football API error: ${response.status} ${response.statusText}. Body: ${bodyText}`,
+        `Football API error (competitionId=${competitionId}): ${response.status} ${response.statusText}. Body: ${bodyText}`,
       );
       throw new ServiceUnavailableException(
-        `Football API responded with ${response.status}`,
+        `Football API responded with ${response.status} (competitionId=${competitionId})`,
       );
     }
 
@@ -134,12 +139,12 @@ export class FootballService {
     const errors = await validate(dto, {
       whitelist: true,
       forbidNonWhitelisted: false,
-      forbidUnknownValues: true, // TODO
+      forbidUnknownValues: true,
     });
 
     if (errors.length > 0) {
       throw new ServiceUnavailableException(
-        'Football API returned invalid data',
+        `Football API returned invalid data (competitionId=${competitionId})`,
       );
     }
 
