@@ -64,11 +64,11 @@ export class FootballService {
     }
   }
 
-  async getCompetition(competitionId: string) {
+  async getCompetition(competitionExternalId: string) {
     if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
     if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
     const response = await fetch(
-      `${process.env.FOOTBALL_API_URL}/competitions/${competitionId}`,
+      `${process.env.FOOTBALL_API_URL}/competitions/${competitionExternalId}`,
       {
         method: 'GET',
         headers: {

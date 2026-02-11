@@ -123,19 +123,19 @@ export class TournamentsController {
       if (!body || !body.competitionId)
         throw new Error('Tournament ID is required');
       console.log('tournament ID: ', body.competitionId);
-      const competitionId = body.competitionId;
-      if (!competitionId)
+      const competitionExternalId = body.competitionId;
+      if (!competitionExternalId)
         throw new BadRequestException({
           message: 'Tournament ID is required',
           code: 'BAD_REQUEST',
         });
 
-      if (isNaN(Number(competitionId)))
+      if (isNaN(Number(competitionExternalId)))
         throw new Error('Invalid tournament ID');
 
       /* try to find tournament in the DB. If it exists, throw an error. */
       const dbResponse = await this.tournamentsService.findTournamentInDbById(
-        Number(competitionId),
+        Number(competitionExternalId),
       );
       console.log('tournament data:', dbResponse);
 
@@ -145,10 +145,10 @@ export class TournamentsController {
       console.log('tournament does not exist in DB.');
 
       const tournamentResponse =
-        await this.footballService.getCompetitionMatches(competitionId);
+        await this.footballService.getCompetitionMatches(competitionExternalId);
 
       const response = await this.tournamentsService.addNewTournament({
-        external_id: Number(competitionId),
+        external_id: Number(competitionExternalId),
         name: tournamentResponse.competition.name,
         isObservable: false,
       });
