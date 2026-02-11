@@ -7,10 +7,11 @@ import { Tournaments } from './entities/tournament.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { Seasons } from './entities/seasons.entity';
+import { Matches } from './entities/matches.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tournaments, Seasons]),
+    TypeOrmModule.forFeature([Tournaments, Seasons, Matches]),
     FootballModule,
     AuthModule,
     UsersModule,

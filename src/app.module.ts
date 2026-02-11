@@ -16,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserRoles } from './users/entities/user-roles.entity';
 import { UserRoleNames } from './users/entities/user-role-names.entity';
 import { Seasons } from './tournaments/entities/seasons.entity';
+import { Matches } from './tournaments/entities/matches.entity';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { Seasons } from './tournaments/entities/seasons.entity';
         RefreshToken,
         Tournaments,
         Seasons, // Competition Seasons
+        Matches, // All matches from competitions
       ],
       // synchronize: true, // WARNING!
       timezone: 'Z',

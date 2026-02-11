@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Tournaments } from './entities/tournament.entity';
 import { FootballService } from '../football/football.service';
 import { Seasons } from './entities/seasons.entity';
+import { Matches } from './entities/matches.entity';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -20,6 +21,8 @@ export class TournamentsService {
     private readonly tournamentsRepo: Repository<Tournaments>,
     @InjectRepository(Seasons)
     private readonly seasonsRepo: Repository<Seasons>,
+    @InjectRepository(Matches)
+    private readonly matchesRepo: Repository<Matches>,
 
     private readonly footballService: FootballService,
   ) {}
