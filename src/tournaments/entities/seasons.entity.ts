@@ -17,7 +17,7 @@ export class Seasons {
   @Column({ type: 'bigint' })
   external_id: number;
 
-  @Column({ name: 'tournament_id', type: 'int' })
+  @Column({ name: 'tournament_id', type: 'bigint' })
   tournament_id: number;
 
   @ManyToOne(() => Tournaments)
