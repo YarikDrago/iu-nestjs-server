@@ -144,12 +144,13 @@ export class TournamentsController {
       }
       console.log('tournament does not exist in DB.');
 
-      const tournamentResponse =
-        await this.footballService.getCompetitionMatches(competitionExternalId);
+      const tournamentResponse = await this.footballService.getCompetition(
+        competitionExternalId,
+      );
 
       const response = await this.tournamentsService.addNewTournament({
         external_id: Number(competitionExternalId),
-        name: tournamentResponse.competition.name,
+        name: tournamentResponse.name,
         isObservable: false,
       });
 
