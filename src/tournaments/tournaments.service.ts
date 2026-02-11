@@ -107,19 +107,6 @@ export class TournamentsService {
     return response;
   }
 
-  async upsertSeason(input: UpsertSeasonInput) {
-    return this.seasonsRepo.upsert(
-      {
-        external_id: input.externalId,
-        tournament_id: input.tournamentId,
-        start_date: input.startDate,
-        end_date: input.endDate,
-        is_current: input.isCurrent ?? false,
-      },
-      ['external_id'],
-    );
-  }
-
   async upsertSeasons(inputs: UpsertSeasonInput[]) {
     if (inputs.length === 0)
       return { identifiers: [], generatedMaps: [], raw: [] };
