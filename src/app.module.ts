@@ -17,6 +17,7 @@ import { UserRoles } from './users/entities/user-roles.entity';
 import { UserRoleNames } from './users/entities/user-role-names.entity';
 import { Seasons } from './tournaments/entities/seasons.entity';
 import { Matches } from './tournaments/entities/matches.entity';
+import { UpdatesModule } from './updates/updates.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { Matches } from './tournaments/entities/matches.entity';
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,
+    UpdatesModule,
   ],
 })
 export class AppModule {}

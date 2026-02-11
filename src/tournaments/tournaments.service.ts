@@ -9,6 +9,7 @@ import { Tournaments } from './entities/tournament.entity';
 import { FootballService } from '../football/football.service';
 import { Seasons } from './entities/seasons.entity';
 import { Matches } from './entities/matches.entity';
+import { UpdatesService } from '../updates/updates.service';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -41,6 +42,7 @@ export class TournamentsService {
     private readonly matchesRepo: Repository<Matches>,
 
     private readonly footballService: FootballService,
+    private readonly updatesService: UpdatesService,
   ) {}
 
   async getAllTournaments() {
@@ -280,6 +282,8 @@ export class TournamentsService {
     }
 
     await this.upsertMatches(preparedMatchesData);
+
+    this.updatesService.setLastUpdateNow();
 
     console.log('Matches were successfully updated!');
   }

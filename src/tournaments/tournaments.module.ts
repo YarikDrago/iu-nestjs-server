@@ -8,6 +8,7 @@ import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { Seasons } from './entities/seasons.entity';
 import { Matches } from './entities/matches.entity';
+import { UpdatesModule } from '../updates/updates.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { Matches } from './entities/matches.entity';
     FootballModule,
     AuthModule,
     UsersModule,
+    UpdatesModule,
   ],
   providers: [TournamentsService],
   exports: [TournamentsService],
