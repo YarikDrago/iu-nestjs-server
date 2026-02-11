@@ -35,13 +35,6 @@ export class TournamentsService {
     return await this.tournamentsRepo.find({ where: { isObservable: true } });
   }
 
-  async getTournament(externalId: string) {
-    console.log('try to get tournaments (service)');
-    const response =
-      await this.footballService.getCompetitionMatches(externalId);
-    return response;
-  }
-
   async findTournamentInDbById(externalId: number) {
     console.log('try to find tournament in DB (service)');
     return await this.tournamentsRepo.findOne({
