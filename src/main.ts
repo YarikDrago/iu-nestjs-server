@@ -20,5 +20,12 @@ async function bootstrap() {
   setInterval(() => {
     void tournamentsService.updateMatchesOfCompetitions();
   }, 60 * 1000);
+
+  setInterval(
+    () => {
+      void tournamentsService.updateSeasonsOfCompetitions();
+    },
+    24 * 60 * 60 * 1000,
+  );
 }
 bootstrap();
