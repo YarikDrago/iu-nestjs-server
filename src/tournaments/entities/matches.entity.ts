@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Seasons } from './seasons.entity';
 import { Tournaments } from './tournament.entity';
@@ -49,6 +50,10 @@ export class Matches {
   @Column({ type: 'int', nullable: true })
   away_score: number | null;
 
-  @Column({ type: 'timestamp' })
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'TIMESTAMP',
+    onUpdate: 'TIMESTAMP',
+  })
   updated_at: Date;
 }
