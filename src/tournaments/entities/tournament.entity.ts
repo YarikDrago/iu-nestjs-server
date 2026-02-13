@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { MaxLength } from 'class-validator';
+import { Seasons } from './seasons.entity';
 
 @Entity({ name: 'tournaments' })
 export class Tournaments {
@@ -15,6 +16,9 @@ export class Tournaments {
 
   @Column({ type: 'boolean', default: false })
   isObservable: boolean;
+
+  @OneToMany(() => Seasons, (s) => s.tournament)
+  seasons: Seasons[];
 
   // @Column()
   // created_at: Date;

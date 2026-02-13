@@ -10,15 +10,23 @@ import {
 import { MaxLength } from 'class-validator';
 import { Tournaments } from './tournament.entity';
 import { Seasons } from './seasons.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity({ name: 'groups' })
 export class Group {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ name: 'name', type: 'varchar', length: 255 })
   @MaxLength(255)
   name: string;
+
+  @Column({ name: 'owner_id', type: 'bigint' })
+  owner_id: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'owner_id' })
+  owner: User;
 
   @Column({ name: 'tournament_id', type: 'bigint' })
   tournament_id: number;
