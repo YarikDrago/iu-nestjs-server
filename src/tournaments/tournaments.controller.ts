@@ -273,6 +273,37 @@ export class TournamentsController {
     }
   }
 
+  @Delete('groups/:groupId')
+  async deleteGroupByOwner(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+  ) {
+    try {
+      console.log('try to delete group by owner (controller)');
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      await this.tournamentsService.deleteGroupByOwner(groupId, user.id);
+      console.log('Group was successfully deleted!');
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Post(':externalId/groups')
   async createNewGroup(
     @Req() req: Request,

@@ -352,6 +352,19 @@ export class TournamentsService {
     return await this.groupRepo.find({ where: { id: In(groupIds) } });
   }
 
+  async deleteGroupByOwner(groupId: number, userId: number) {
+    console.log('try to delete group by owner (service)');
+    console.log('groupId:', groupId, 'userId:', userId);
+    const response = await this.groupRepo.delete({
+      id: groupId,
+      owner_id: userId,
+    });
+    if (response.affected === 0) {
+      throw new NotFoundException('Group not found');
+    }
+    return true;
+  }
+
   generateInviteCode(length = 10): string {
     const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
     if (length < 4 || length > 50) {
