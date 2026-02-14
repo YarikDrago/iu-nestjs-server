@@ -293,6 +293,7 @@ export class TournamentsController {
     @Body() body: { isObservable: boolean },
   ) {
     try {
+      console.log('try to update tournament observable status by external ID');
       this.authService.checkAccessTokenFromRequest(req);
       await this.authService.checkUserRolesByRequest(req, ['admin']);
       const response =
