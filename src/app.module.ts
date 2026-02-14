@@ -18,6 +18,7 @@ import { UserRoleNames } from './users/entities/user-role-names.entity';
 import { Seasons } from './tournaments/entities/seasons.entity';
 import { Matches } from './tournaments/entities/matches.entity';
 import { UpdatesModule } from './updates/updates.module';
+import { Group } from './tournaments/entities/group.entity';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { UpdatesModule } from './updates/updates.module';
         Tournaments,
         Seasons, // Competition Seasons
         Matches, // All matches from competitions
+        Group, // Groups for prediction tournaments
       ],
       // synchronize: true, // WARNING!
       timezone: 'Z',
