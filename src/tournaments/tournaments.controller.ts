@@ -239,6 +239,40 @@ export class TournamentsController {
     }
   }
 
+  @Get('groups')
+  async getUserGroups(@Req() req: Request) {
+    try {
+      console.log('try to get user groups (controller)');
+      this.authService.checkAccessTokenFromRequest(req);
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const groups = await this.tournamentsService.getUserGroups(user.id);
+      console.log('groups:', groups);
+
+      return groups.map((group) => ({
+        id: group.id,
+        name: group.name,
+        isOwner: group.owner_id === user.id,
+      }));
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Post(':externalId/groups')
   async createNewGroup(
     @Req() req: Request,

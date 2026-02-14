@@ -340,6 +340,18 @@ export class TournamentsService {
     return await this.groupMembersRepo.save(groupMemberEntity);
   }
 
+  async getUserGroups(userId: number): Promise<Group[]> {
+    console.log('try to get my groups (service)', userId);
+    /* Get groups where the user is owner or member. */
+    const userInGroups = await this.groupMembersRepo.find({
+      where: { user_id: userId },
+    });
+    console.log('userInGroups:', userInGroups);
+    /* Get groups by their IDs. */
+    const groupIds = userInGroups.map((g) => g.group_id);
+    return await this.groupRepo.find({ where: { id: In(groupIds) } });
+  }
+
   generateInviteCode(length = 10): string {
     const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
     if (length < 4 || length > 50) {
