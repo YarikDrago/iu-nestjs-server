@@ -60,7 +60,7 @@ export class TournamentsService {
     });
   }
 
-  async addNewTournament(payload: Omit<Tournaments, 'id'>) {
+  async addNewTournament(payload: Omit<Tournaments, 'id' | 'seasons'>) {
     console.log('try to add new tournament (service)');
     const tournament = this.tournamentsRepo.create(payload);
     return await this.tournamentsRepo.save(tournament);
