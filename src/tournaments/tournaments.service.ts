@@ -10,6 +10,8 @@ import { FootballService } from '../football/football.service';
 import { Seasons } from './entities/seasons.entity';
 import { Matches } from './entities/matches.entity';
 import { UpdatesService } from '../updates/updates.service';
+import { Group } from './entities/group.entity';
+import { randomBytes } from 'node:crypto';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -31,6 +33,13 @@ export type UpsertMatchInput = {
   awayScore: number | null;
 };
 
+export type UpsertGroupInput = {
+  name: string;
+  tournamentId: number;
+  seasonId: number;
+  ownerId: number;
+};
+
 @Injectable()
 export class TournamentsService {
   constructor(
@@ -40,6 +49,8 @@ export class TournamentsService {
     private readonly seasonsRepo: Repository<Seasons>,
     @InjectRepository(Matches)
     private readonly matchesRepo: Repository<Matches>,
+    @InjectRepository(Group)
+    private readonly groupRepo: Repository<Group>,
 
     private readonly footballService: FootballService,
     private readonly updatesService: UpdatesService,
@@ -301,5 +312,33 @@ export class TournamentsService {
     this.updatesService.setLastUpdateNow();
 
     console.log('Matches were successfully updated!');
+  }
+
+  async addNewGroup(input: UpsertGroupInput): Promise<Group> {
+    console.log('try to add new group (service)');
+    const groupEntity = this.groupRepo.create({
+      name: input.name,
+      tournament_id: input.tournamentId,
+      season_id: input.seasonId,
+      owner_id: input.ownerId,
+      invite_code: this.generateInviteCode(),
+    });
+    return await this.groupRepo.save(groupEntity);
+  }
+
+  generateInviteCode(length = 10): string {
+    const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    if (length < 4 || length > 50) {
+      throw new Error('Invite code length must be between 4 and 50');
+    }
+
+    const bytes = randomBytes(length);
+    let code = '';
+
+    for (let i = 0; i < length; i += 1) {
+      code += alphabet[bytes[i] % alphabet.length];
+    }
+
+    return code;
   }
 }

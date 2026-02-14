@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
 import { AuthService } from '../auth/auth.service';
@@ -223,6 +224,52 @@ export class TournamentsController {
       await this.authService.checkUserRolesByRequest(req, ['admin']);
 
       await this.tournamentsService.updateMatchesOfCompetitions();
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post(':externalId/groups')
+  async createNewGroup(
+    @Req() req: Request,
+    @Param('externalId') tournamentExternalId: string,
+    @Body() body: { name: string; seasonExternalId: number },
+  ) {
+    try {
+      console.log('try to add new group (controller)');
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (!body || !body.name || !body.seasonExternalId) {
+        throw new BadRequestException({
+          message: 'Name and season ID are required',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      const response = await this.tournamentsService.addNewGroup({
+        name: body.name,
+        tournamentId: Number(tournamentExternalId),
+        seasonId: body.seasonExternalId,
+        ownerId: user.id,
+      });
+
+      console.log('response:', response);
+
       return true;
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
