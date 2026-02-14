@@ -10,10 +10,17 @@ import { Seasons } from './entities/seasons.entity';
 import { Matches } from './entities/matches.entity';
 import { UpdatesModule } from '../updates/updates.module';
 import { Group } from './entities/group.entity';
+import { GroupMembers } from './entities/group_members.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tournaments, Seasons, Matches, Group]),
+    TypeOrmModule.forFeature([
+      Tournaments,
+      Seasons,
+      Matches,
+      Group,
+      GroupMembers,
+    ]),
     FootballModule,
     AuthModule,
     UsersModule,

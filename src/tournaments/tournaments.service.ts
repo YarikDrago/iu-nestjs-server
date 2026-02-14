@@ -12,6 +12,7 @@ import { Matches } from './entities/matches.entity';
 import { UpdatesService } from '../updates/updates.service';
 import { Group } from './entities/group.entity';
 import { randomBytes } from 'node:crypto';
+import { GroupMembers } from './entities/group_members.entity';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -51,6 +52,8 @@ export class TournamentsService {
     private readonly matchesRepo: Repository<Matches>,
     @InjectRepository(Group)
     private readonly groupRepo: Repository<Group>,
+    @InjectRepository(GroupMembers)
+    private readonly groupMembersRepo: Repository<GroupMembers>,
 
     private readonly footballService: FootballService,
     private readonly updatesService: UpdatesService,
