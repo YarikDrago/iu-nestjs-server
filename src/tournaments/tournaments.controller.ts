@@ -82,6 +82,7 @@ export class TournamentsController {
     }
   }
 
+  /* Show all available and active tournaments from DB */
   @Get('')
   async showAllTournaments(@Req() req: Request) {
     try {
@@ -89,13 +90,10 @@ export class TournamentsController {
 
       this.authService.checkAccessTokenFromRequest(req);
 
-      const response = await this.tournamentsService.getAllTournaments();
+      const response =
+        await this.tournamentsService.getObservableTournamentsWithCurrentSeason();
       console.log('tournaments data:', response);
-      const data = response.map((tournament) => ({
-        name: tournament.name,
-        // isActive: tournament.isActive,
-      }));
-      return data;
+      return response;
     } catch (e) {
       console.log('error:', e);
 

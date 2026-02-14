@@ -53,6 +53,21 @@ export class TournamentsService {
     return await this.tournamentsRepo.find({ where: { isObservable: true } });
   }
 
+  async getObservableTournamentsWithCurrentSeason() {
+    return this.tournamentsRepo
+      .createQueryBuilder('t')
+      .leftJoinAndMapOne(
+        't.currentSeason',
+        Seasons,
+        's',
+        's.tournament_id = t.id AND s.is_current = :isCurrent',
+        { isCurrent: true },
+      )
+      .where('t.isObservable = :isObservable', { isObservable: true })
+      .orderBy('t.id', 'ASC')
+      .getMany();
+  }
+
   async findTournamentInDbById(externalId: number) {
     console.log('try to find tournament in DB (service)');
     return await this.tournamentsRepo.findOne({
