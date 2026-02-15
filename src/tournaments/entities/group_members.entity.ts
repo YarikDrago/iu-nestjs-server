@@ -33,4 +33,8 @@ export class GroupMembers {
     default: () => 'TIMESTAMP',
   })
   joined_at: Date;
+
+  // TODO create enum or special table statuses
+  @Column({ type: 'varchar', length: 100, nullable: false })
+  status: string; // unverified, verified, rejected
 }

@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,6 +12,7 @@ import { MaxLength } from 'class-validator';
 import { Tournaments } from './tournament.entity';
 import { Seasons } from './seasons.entity';
 import { User } from '../../users/entities/user.entity';
+import { GroupMembers } from './group_members.entity';
 
 @Entity({ name: 'groups' })
 export class Group {
@@ -42,6 +44,9 @@ export class Group {
   @ManyToOne(() => Seasons)
   @JoinColumn({ name: 'season_id' })
   season: Seasons;
+
+  @OneToMany(() => GroupMembers, (gm) => gm.group)
+  members: GroupMembers[];
 
   @Column({ type: 'varchar', length: 50, nullable: false })
   @MaxLength(50)
