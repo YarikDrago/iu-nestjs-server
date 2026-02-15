@@ -331,6 +331,23 @@ export class TournamentsService {
     return group;
   }
 
+  async findGroupByInviteCode(inviteCode: string) {
+    console.log('try to find group by invite code (service)');
+    return await this.groupRepo.findOne({
+      where: { invite_code: inviteCode },
+      relations: {
+        owner: true,
+      },
+    });
+  }
+
+  async findUserInGroup(groupId: number, userId: number) {
+    console.log('try to find user in group (service)');
+    return await this.groupMembersRepo.findOne({
+      where: { group_id: groupId, user_id: userId },
+    });
+  }
+
   async addUserAsGroupMember(
     groupId: number,
     userId: number,

@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import type { Request } from 'express';
 import { FootballService } from '../football/football.service';
 import { UsersService } from '../users/users.service';
 import { FootballCompetitionMatchesDto } from '../football/dto/football-competition-matches.dto';
+import { MailService } from '../mail/mail.service';
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -26,6 +28,7 @@ export class TournamentsController {
     private readonly footballService: FootballService,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly mailService: MailService,
   ) {}
 
   /* Get all tournaments from the API. */
@@ -289,6 +292,74 @@ export class TournamentsController {
 
       await this.tournamentsService.deleteGroupByOwner(groupId, user.id);
       console.log('Group was successfully deleted!');
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('groups/join')
+  async joinGroupByLink(@Req() req: Request, @Query('code') code: string) {
+    try {
+      console.log('try to join group by link (controller)');
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+      console.log('user:', user);
+      console.log('code:', code);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (!code) {
+        throw new BadRequestException({
+          message: 'Code is required',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      const group = await this.tournamentsService.findGroupByInviteCode(code);
+
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Invalid code',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      console.log('group:', group.id);
+      console.log('user:', user.id);
+
+      const userFromGroup = await this.tournamentsService.findUserInGroup(
+        group.id,
+        user.id,
+      );
+
+      if (userFromGroup) {
+        throw new BadRequestException({
+          message: 'User already in group',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      await this.tournamentsService.addUserAsGroupMember(group.id, user.id);
+
+      await this.mailService.sendJoinToGroupRequestForCheck(
+        group.owner.email,
+        user.nickname,
+        group.name,
+      );
+
+      console.log('User successfully joined group.');
       return true;
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
