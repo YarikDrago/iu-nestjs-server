@@ -11,6 +11,7 @@ import { Matches } from './entities/matches.entity';
 import { UpdatesModule } from '../updates/updates.module';
 import { Group } from './entities/group.entity';
 import { GroupMembers } from './entities/group_members.entity';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GroupMembers } from './entities/group_members.entity';
     AuthModule,
     UsersModule,
     UpdatesModule,
+    MailModule,
   ],
   providers: [TournamentsService],
   exports: [TournamentsService],
