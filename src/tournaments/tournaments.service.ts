@@ -327,15 +327,20 @@ export class TournamentsService {
       invite_code: this.generateInviteCode(),
     });
     const group = await this.groupRepo.save(groupEntity);
-    await this.addUserAsGroupMember(group.id, input.ownerId);
+    await this.addUserAsGroupMember(group.id, input.ownerId, 'verified');
     return group;
   }
 
-  async addUserAsGroupMember(groupId: number, userId: number) {
+  async addUserAsGroupMember(
+    groupId: number,
+    userId: number,
+    status = 'unverified',
+  ) {
     console.log('try to add user as group member (service)');
     const groupMemberEntity = this.groupMembersRepo.create({
       group_id: groupId,
       user_id: userId,
+      status,
     });
     return await this.groupMembersRepo.save(groupMemberEntity);
   }
