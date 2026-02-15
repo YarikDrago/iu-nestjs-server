@@ -90,4 +90,35 @@ export class MailService {
             `,
     });
   }
+
+  async sendJoinToGroupRequestForCheck(
+    to: string, // Owner of the group
+    userNicknameToJoin: string,
+    groupName: string,
+  ) {
+    console.log(
+      'try to send the join to group request for check (service mail)',
+    );
+    const recipient =
+      process.env.NODE_ENV === 'development' ? process.env.SMTP_TEST_EMAIL : to;
+
+    const userText = `User: ${userNicknameToJoin}`;
+    const groupNameText = `Group: ${groupName}`;
+
+    await this.transporter.sendMail({
+      from: `${process.env.SMTP_MAIL_TITLE} <${process.env.SMTP_USER}>`,
+      to: recipient,
+      subject: '[IU] Request to join to group',
+      text: '',
+      html: `    
+                <div>
+                  <h3>Request to join the group</h3>
+                  <p>${userText}</p>
+                  <p>${groupNameText}</p>
+  
+                  <p>Review your group to approve the user.</p>       
+                </div>
+            `,
+    });
+  }
 }
