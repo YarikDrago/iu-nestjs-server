@@ -43,7 +43,7 @@ export class MailService {
     console.log('try to send the activation link (service mail)');
     const recipient =
       process.env.NODE_ENV === 'development' ? process.env.SMTP_TEST_EMAIL : to;
-    const fullActivationLink = `${process.env.API_URL}/api/activate/${link}`;
+    const fullActivationLink = `${process.env.API_URL}/activate/${link}`;
 
     await this.transporter.sendMail({
       from: `${process.env.SMTP_MAIL_TITLE} <${process.env.SMTP_USER}>`,
