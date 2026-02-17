@@ -322,6 +322,36 @@ export class TournamentsController {
     }
   }
 
+  @Patch('groups/:groupId/invite-code')
+  async changeInviteCode(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+  ) {
+    try {
+      console.log('try to change invite code (controller)');
+      this.authService.checkAccessTokenFromRequest(req);
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      await this.tournamentsService.updateGroupInviteCode(groupId, user.id);
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Get('groups/:groupId')
   async getGroupById(@Req() req: Request, @Param('groupId') groupId: number) {
     try {

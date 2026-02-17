@@ -421,6 +421,17 @@ export class TournamentsService {
     return true;
   }
 
+  async updateGroupInviteCode(groupId: number, userId: number) {
+    console.log('try to update group invite code (service)');
+    const response = await this.groupRepo.update(
+      { id: groupId, owner_id: userId },
+      { invite_code: this.generateInviteCode() },
+    );
+    if (response.affected === 0) {
+      throw new NotFoundException('Group not found');
+    }
+  }
+
   generateInviteCode(length = 10): string {
     const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
     if (length < 4 || length > 50) {
