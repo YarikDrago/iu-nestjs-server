@@ -278,6 +278,50 @@ export class TournamentsController {
     }
   }
 
+  @Patch('groups/:groupId')
+  async renameGroup(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+    @Body() body: { name: string },
+  ) {
+    try {
+      console.log('try to rename group (controller)');
+      this.authService.checkAccessTokenFromRequest(req);
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const group = await this.tournamentsService.findGroupById(groupId, true);
+
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      if (group.owner_id !== user.id) {
+        throw new UnauthorizedException('You are not owner of this group');
+      }
+
+      return this.tournamentsService.updateGroup(groupId, body.name, user.id);
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Get('groups/:groupId')
   async getGroupById(@Req() req: Request, @Param('groupId') groupId: number) {
     try {
@@ -305,6 +349,7 @@ export class TournamentsController {
         id: group.id,
         name: group.name,
         isOwner: group.owner_id === user.id,
+        inviteCode: group.invite_code,
         tournament: group.tournament,
         season: group.season,
         createdAt: group.created_at,
