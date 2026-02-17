@@ -255,13 +255,66 @@ export class TournamentsController {
       }
 
       const groups = await this.tournamentsService.getUserGroups(user.id);
-      console.log('groups:', groups);
 
       return groups.map((group) => ({
         id: group.id,
         name: group.name,
         isOwner: group.owner_id === user.id,
+        tournament: group.tournament,
+        season: group.season,
+        createdAt: group.created_at,
       }));
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('groups/:groupId')
+  async getGroupById(@Req() req: Request, @Param('groupId') groupId: number) {
+    try {
+      console.log('try to get group by ID (controller)');
+      this.authService.checkAccessTokenFromRequest(req);
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      console.log('group id:', groupId);
+
+      const group = await this.tournamentsService.findGroupById(groupId, true);
+
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      /* Attach email info only to each user and remove user entity from the group. */
+      return {
+        id: group.id,
+        name: group.name,
+        isOwner: group.owner_id === user.id,
+        tournament: group.tournament,
+        season: group.season,
+        createdAt: group.created_at,
+        members: group.members.map((member) => ({
+          id: member.id,
+          user_id: member.user_id,
+          status: member.status,
+          nickname: member.user?.nickname,
+        })),
+      };
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
 

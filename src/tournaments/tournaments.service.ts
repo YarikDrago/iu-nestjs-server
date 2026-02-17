@@ -341,6 +341,24 @@ export class TournamentsService {
     });
   }
 
+  async findGroupById(groupId: number, expanded: boolean = false) {
+    console.log('try to find group by id (service)');
+    const settings = {
+      where: { id: groupId },
+    };
+    if (expanded) {
+      settings['relations'] = {
+        tournament: true,
+        season: true,
+        members: {
+          user: true,
+        },
+      };
+    }
+
+    return await this.groupRepo.findOne(settings);
+  }
+
   async findUserInGroup(groupId: number, userId: number) {
     console.log('try to find user in group (service)');
     return await this.groupMembersRepo.findOne({
@@ -367,11 +385,15 @@ export class TournamentsService {
     /* Get groups where the user is owner or member. */
     const userInGroups = await this.groupMembersRepo.find({
       where: { user_id: userId },
+      relations: { group: true },
     });
     console.log('userInGroups:', userInGroups);
     /* Get groups by their IDs. */
     const groupIds = userInGroups.map((g) => g.group_id);
-    return await this.groupRepo.find({ where: { id: In(groupIds) } });
+    return await this.groupRepo.find({
+      where: { id: In(groupIds) },
+      relations: { tournament: true, season: true },
+    });
   }
 
   async deleteGroupByOwner(groupId: number, userId: number) {
