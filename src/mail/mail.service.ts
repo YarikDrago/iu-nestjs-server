@@ -121,4 +121,22 @@ export class MailService {
             `,
     });
   }
+
+  async sendUserApprovedStatusJoinGroup(to: string, groupName: string) {
+    console.log('Try to send to user approved joining status');
+    const recipient =
+      process.env.NODE_ENV === 'development' ? process.env.SMTP_TEST_EMAIL : to;
+    await this.transporter.sendMail({
+      from: `${process.env.SMTP_MAIL_TITLE} <${process.env.SMTP_USER}>`,
+      to: recipient,
+      subject: '[IU] Join request approved',
+      text: '',
+      html: `    
+                <div>
+                  <h3>Your request to join has been approved!</h3>
+                  <p>Group: ${groupName}</p>    
+                </div>
+            `,
+    });
+  }
 }
