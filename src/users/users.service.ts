@@ -39,6 +39,10 @@ export class UsersService {
     return await this.usersRepository.findOne(options);
   }
 
+  async findUserById(userId: number) {
+    return await this.usersRepository.findOne({ where: { id: userId } });
+  }
+
   async addNewUser(dto: RegisterUserDto): Promise<User> {
     /* Find inactive status */
     const inactiveStatus = await this.userStatusRepository.findOne({
