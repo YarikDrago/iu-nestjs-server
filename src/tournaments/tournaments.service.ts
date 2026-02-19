@@ -421,6 +421,30 @@ export class TournamentsService {
     return true;
   }
 
+  async updateGroupMember(groupId: number, userId: number, status: string) {
+    console.log('try to update group member status (service)');
+    const response = await this.groupMembersRepo.update(
+      { group_id: groupId, user_id: userId },
+      { status: status },
+    );
+    if (response.affected === 0) {
+      throw new NotFoundException('Group member not found');
+    }
+    return true;
+  }
+
+  async deleteGroupMember(groupId: number, userId: number) {
+    console.log('try to delete group member (service)');
+    const response = await this.groupMembersRepo.delete({
+      group_id: groupId,
+      user_id: userId,
+    });
+    if (response.affected === 0) {
+      throw new NotFoundException('Group member not found');
+    }
+    return true;
+  }
+
   async updateGroupInviteCode(groupId: number, userId: number) {
     console.log('try to update group invite code (service)');
     const response = await this.groupRepo.update(

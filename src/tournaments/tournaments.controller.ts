@@ -279,6 +279,85 @@ export class TournamentsController {
     }
   }
 
+  @Patch('groups/:groupId/members/:userId')
+  async updateGroupMember(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+    @Param('userId') userId: number,
+    @Body() body: { status: string },
+  ) {
+    try {
+      console.log(
+        'try to update group member status (controller)',
+        body.status,
+      );
+      this.authService.checkAccessTokenFromRequest(req);
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const owner = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      // TODO change status to enum
+      if (
+        !['verified', 'unverified', 'suspended', 'delete'].includes(body.status)
+      ) {
+        throw new BadRequestException({
+          message: 'Invalid status',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      if (!owner) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const member = await this.usersService.findUserById(userId);
+
+      if (!member) {
+        throw new BadRequestException('Member not found');
+      }
+
+      const group = await this.tournamentsService.findGroupById(groupId, true);
+      if (owner.id !== group?.owner_id) {
+        throw new UnauthorizedException('You are not owner of this group');
+      }
+
+      if (body.status === 'delete') {
+        await this.tournamentsService.deleteGroupMember(groupId, userId);
+        console.log(
+          'User with ID:',
+          userId,
+          'was successfully deleted from group with ID:',
+        );
+        return true;
+      }
+
+      await this.tournamentsService.updateGroupMember(
+        groupId,
+        userId,
+        body.status,
+      );
+
+      if (body.status === 'verified') {
+        this.mailService.sendUserApprovedStatusJoinGroup(
+          member.email,
+          group.name,
+        );
+      }
+
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Patch('groups/:groupId')
   async renameGroup(
     @Req() req: Request,
