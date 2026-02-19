@@ -4,9 +4,15 @@ import { AuthService } from './auth.service';
 import { RefreshTokenModule } from '../refreshToken/refresh-token.module';
 import { UsersModule } from '../users/users.module';
 import { MailService } from '../mail/mail.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ResetPassword } from './entities/reset_passowrd.entity';
 
 @Module({
-  imports: [RefreshTokenModule, UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([ResetPassword]),
+    RefreshTokenModule,
+    UsersModule,
+  ],
   providers: [AuthService, MailService],
   exports: [AuthService],
   controllers: [AuthController],

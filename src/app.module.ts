@@ -20,6 +20,7 @@ import { Matches } from './tournaments/entities/matches.entity';
 import { UpdatesModule } from './updates/updates.module';
 import { Group } from './tournaments/entities/group.entity';
 import { GroupMembers } from './tournaments/entities/group_members.entity';
+import { ResetPassword } from './auth/entities/reset_passowrd.entity';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { GroupMembers } from './tournaments/entities/group_members.entity';
         UserRoles,
         UserRoleNames,
         RefreshToken,
+        ResetPassword,
         Tournaments,
         Seasons, // Competition Seasons
         Matches, // All matches from competitions
