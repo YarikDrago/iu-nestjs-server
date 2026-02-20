@@ -16,6 +16,9 @@ export class ResetPassword {
   @Column({ name: 'user_id', type: 'bigint' })
   user_id: number;
 
+  @Column({ name: 'token_hash', type: 'varchar', length: 64 })
+  token_hash: string;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
