@@ -139,4 +139,57 @@ export class MailService {
             `,
     });
   }
+
+  async sendUserResetPasswordLink(to: string, resetToken: string) {
+    console.log('Try to send to user reset password link');
+    const recipient =
+      process.env.NODE_ENV === 'development' ? process.env.SMTP_TEST_EMAIL : to;
+
+    const fullResetPasswordLink = `${process.env.API_URL}/reset-password/${resetToken}`;
+
+    await this.transporter.sendMail({
+      from: `${process.env.SMTP_MAIL_TITLE} <${process.env.SMTP_USER}>`,
+      to: recipient,
+      subject: '[IU] Reset password link',
+      text: '',
+      html: `    
+                <div>
+                    <div style="
+                        display: block;
+                        width: 100%;
+                        gap: 15px;
+                        "
+                    >
+                        <h1>Password Reset in the IU Portal</h1>
+                        <p>Click the button below to proceed with the password reset process.</p>
+                        <p>If you did not request a password change, please ignore this message.</p>       
+                    </div>
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        width: 100%;
+                    "
+                    >
+                        <a style="
+                            position: relative;
+                            display: block;
+                        " href="${fullResetPasswordLink}">
+                            <button style="
+                                position: relative;
+                                background-color: #0145f0;
+                                font-weight: bold;
+                                color: antiquewhite; 
+                                padding: 10px; 
+                                border-radius: 5px; 
+                                border: none; 
+                                text-decoration: none;
+                                cursor: pointer;
+                                "
+                            >Change password</button>    
+                        </a>
+                    </div>
+                </div>
+            `,
+    });
+  }
 }
