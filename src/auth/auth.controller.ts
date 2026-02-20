@@ -278,4 +278,37 @@ export class AuthController {
       throw new HttpException((e as Error).message, HttpStatus.BAD_REQUEST);
     }
   }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: { email: string }) {
+    try {
+      console.log('try to send forgot password email');
+      if (!dto || !dto.email) {
+        throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
+      }
+      console.log('dto:', dto);
+      const user = await this.usersService.findUserByEmail(dto.email);
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+      }
+      console.log('user:', user);
+
+      const resetToken = await this.authService.createNewResetPassword(user.id);
+
+      await this.mailService.sendUserResetPasswordLink(user.email, resetToken);
+
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

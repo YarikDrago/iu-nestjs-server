@@ -13,12 +13,18 @@ import * as jwt from 'jsonwebtoken';
 import type { Response, Request } from 'express';
 import * as cookie from 'cookie';
 import { User } from '../users/entities/user.entity';
+import { ResetPassword } from './entities/reset_passowrd.entity';
+import { IsNull, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { createHash, randomBytes } from 'node:crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly refreshTokenService: RefreshTokenService,
     private readonly usersService: UsersService,
+    @InjectRepository(ResetPassword)
+    private readonly resetPasswordRepo: Repository<ResetPassword>,
   ) {}
 
   private getCookieOrThrow(req: Request, name: string): string {
@@ -144,5 +150,35 @@ export class AuthService {
   checkUserRoles(user: User, requiredRoles: string[]): boolean {
     const roles = user.userRoles.map((ur) => ur.role.name);
     return requiredRoles.every((role) => roles.includes(role));
+  }
+
+  async createNewResetPassword(userId: number) {
+    /* Generate random reset token (what we return to user / put in email) */
+    const resetToken = randomBytes(32).toString('hex');
+
+    /* Store only hash in DB */
+    const resetTokenHash = createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    /* Revoke all old reset tokens for this user */
+    await this.resetPasswordRepo.update(
+      { user_id: userId, revoked_at: IsNull() },
+      { revoked_at: new Date() },
+    );
+
+    /* Create new reset token in the DB */
+    // const expirationDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const record = this.resetPasswordRepo.create({
+      user_id: userId,
+      token_hash: resetTokenHash,
+      // expiration_date: expirationDate,
+      // created_at: new Date(),
+      // usedAt: null,
+    });
+
+    await this.resetPasswordRepo.save(record);
+
+    return resetToken;
   }
 }
