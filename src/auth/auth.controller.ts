@@ -311,4 +311,81 @@ export class AuthController {
       );
     }
   }
+
+  @Post('reset-password/verify')
+  async resetPasswordVerify(@Body() dto: { token: string }) {
+    try {
+      if (!dto || !dto.token) {
+        throw new HttpException(
+          'Reset token is required',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.authService.checkResetPasswordToken(dto.token);
+
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: { password: string; token: string }) {
+    try {
+      console.log('try to reset password');
+      if (!dto || !dto.password || !dto.token) {
+        throw new HttpException(
+          'Password and reset token are required',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const tokenData = await this.authService.checkResetPasswordToken(
+        dto.token,
+      );
+
+      if (!tokenData) {
+        throw new HttpException(
+          'Reset token is invalid',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (!tokenData.user || !tokenData.user.id) {
+        throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+      }
+
+      /* Deactivate refresh token */
+      this.refreshTokenService.deleteAllTokensForUserId(tokenData.user.id);
+
+      /* Use reset token*/
+      this.authService.useResetPasswordToken(dto.token);
+
+      /* Change password */
+      this.usersService.changePassword(tokenData.user.id, dto.password);
+
+      return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
