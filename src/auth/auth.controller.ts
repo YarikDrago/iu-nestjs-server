@@ -126,7 +126,7 @@ export class AuthController {
     const activationLink = uuidv4();
     console.log('activation Link:', activationLink);
     // Hashing of the password. 1- password, 2- salt
-    const hashPassword = await bcrypt.hash(password, 3);
+    const hashPassword = await this.usersService.createPasswordHash(password);
     console.log('hashed password:', hashPassword);
     /* Add new user to the DB */
     const addingUser = await this.usersService.addNewUser({

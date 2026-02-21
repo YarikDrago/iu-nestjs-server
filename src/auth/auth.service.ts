@@ -204,6 +204,18 @@ export class AuthService {
       console.log('Reset token is expired');
       throw new UnauthorizedException('Reset token is expired');
     }
+    if (resetToken.used_at) {
+      console.log('Reset token is already used');
+      throw new UnauthorizedException('Reset token is already used');
+    }
     return resetToken;
+  }
+
+  async useResetPasswordToken(token: string) {
+    console.log('try to use reset password token');
+    const resetToken = await this.checkResetPasswordToken(token);
+    resetToken.used_at = new Date();
+    await this.resetPasswordRepo.save(resetToken);
+    return resetToken.user;
   }
 }

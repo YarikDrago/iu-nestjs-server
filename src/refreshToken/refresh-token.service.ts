@@ -109,4 +109,9 @@ export class RefreshTokenService {
     await this.refreshTokenRepository.delete({ token: refreshTokenHash });
     return { success: true };
   }
+
+  async deleteAllTokensForUserId(userId: number) {
+    console.log('try to delete all tokens for user (service):', userId);
+    await this.refreshTokenRepository.delete({ user_id: userId });
+  }
 }

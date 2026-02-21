@@ -5,6 +5,7 @@ import { FindOneOptions, Repository } from 'typeorm';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UserStatus } from './entities/user-status.entity';
 import { UserActivationLink } from './entities/user-activation-links.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -18,6 +19,10 @@ export class UsersService {
     @InjectRepository(UserActivationLink)
     private readonly userActivationLinkRepository: Repository<UserActivationLink>,
   ) {}
+
+  async createPasswordHash(password: string) {
+    return await bcrypt.hash(password, 3);
+  }
 
   // TODO delete
   async getUserName(userId: number) {
