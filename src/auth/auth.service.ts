@@ -181,4 +181,29 @@ export class AuthService {
 
     return resetToken;
   }
+
+  async checkResetPasswordToken(token: string) {
+    console.log('try to check reset password token');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const resetToken = await this.resetPasswordRepo.findOne({
+      where: { token_hash: tokenHash },
+      relations: {
+        user: true,
+      },
+    });
+    console.log('resetToken:', resetToken);
+    if (!resetToken) {
+      console.log('Reset token is not found');
+      throw new UnauthorizedException('Reset token is not found');
+    }
+    if (resetToken.revoked_at) {
+      console.log('Reset token is revoked');
+      throw new UnauthorizedException('Reset token is revoked');
+    }
+    if (resetToken.expires_at < new Date()) {
+      console.log('Reset token is expired');
+      throw new UnauthorizedException('Reset token is expired');
+    }
+    return resetToken;
+  }
 }
