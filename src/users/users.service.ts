@@ -117,4 +117,11 @@ export class UsersService {
 
     return { success: true };
   }
+
+  async changePassword(userId: number, newPassword: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+    user.password = await this.createPasswordHash(newPassword);
+    await this.usersRepository.save(user);
+  }
 }
