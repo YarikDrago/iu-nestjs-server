@@ -164,6 +164,7 @@ export class AuthController {
     console.log('user:', user);
     return {
       nickname: user.nickname,
+      userId: user.id,
       roles: user.userRoles.map((ur) => ur.role.name),
     };
   }
