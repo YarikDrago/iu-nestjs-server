@@ -33,16 +33,16 @@ export class Matches {
   tournament: Tournaments;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  home_team: string;
+  home_team: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  away_team: string;
+  away_team: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   start_time: Date | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  status: string;
+  status: string; // 'SCHEDULED', 'POSTPONED', 'SUSPENDED', 'TIMED', 'IN_PLAY', 'FINISHED',
 
   @Column({ type: 'int', nullable: true })
   home_score: number | null;

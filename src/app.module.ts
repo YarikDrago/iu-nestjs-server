@@ -21,6 +21,7 @@ import { UpdatesModule } from './updates/updates.module';
 import { Group } from './tournaments/entities/group.entity';
 import { GroupMembers } from './tournaments/entities/group_members.entity';
 import { ResetPassword } from './auth/entities/reset_passowrd.entity';
+import { Predictions } from './tournaments/entities/predictions.entity';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ResetPassword } from './auth/entities/reset_passowrd.entity';
         Matches, // All matches from competitions
         Group, // Groups for prediction tournaments
         GroupMembers,
+        Predictions,
       ],
       // synchronize: true, // WARNING!
       timezone: 'Z',

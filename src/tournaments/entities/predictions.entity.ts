@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
@@ -12,6 +13,7 @@ import { Group } from './group.entity';
 import { Matches } from './matches.entity';
 
 @Entity({ name: 'predictions' })
+@Unique(['user_id', 'group_id', 'match_id'])
 export class Predictions {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
