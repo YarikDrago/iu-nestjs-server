@@ -16,10 +16,10 @@ import { LoginUserDto } from '../users/dto/login-user.dto';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterUserDto } from '../users/dto/register-user.dto';
-import { v4 as uuidv4 } from 'uuid';
 import { MailService } from '../mail/mail.service';
 import { ActivateUserDto } from '../users/dto/activate-user.dto';
 import type { Request, Response } from 'express';
+import { randomUUID } from 'node:crypto';
 
 @Controller('auth')
 export class AuthController {
@@ -123,7 +123,7 @@ export class AuthController {
     console.log('User does not exist in the DB');
     /* Generate unique activation link */
     // TODO [iu]: check uniqueness of the link
-    const activationLink = uuidv4();
+    const activationLink = randomUUID();
     console.log('activation Link:', activationLink);
     // Hashing of the password. 1- password, 2- salt
     const hashPassword = await this.usersService.createPasswordHash(password);
