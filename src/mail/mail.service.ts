@@ -24,19 +24,18 @@ export class MailService {
 
   async sendTestMail() {
     console.log('try to send email (service mail)');
-
-    await this.transporter
-      .sendMail({
+    try {
+      await this.transporter.sendMail({
         from: `${process.env.SMTP_MAIL_TITLE} <${process.env.SMTP_USER}>`,
         to: `${process.env.SMTP_TEST_EMAIL}`,
         subject: '[IU] test message',
         text: 'This is a simple message to test work of the SMTP',
-      })
-      .catch((e) => {
-        console.log(e);
-        return new Error(e);
       });
-    return true;
+      return true;
+    } catch (e) {
+      console.error('sendTestMail failed:', e);
+      throw e;
+    }
   }
 
   async sendActivationLink(to: string, link: string) {
