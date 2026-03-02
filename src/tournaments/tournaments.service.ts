@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -13,6 +14,7 @@ import { UpdatesService } from '../updates/updates.service';
 import { Group } from './entities/group.entity';
 import { randomBytes } from 'node:crypto';
 import { GroupMembers } from './entities/group_members.entity';
+import { Predictions } from './entities/predictions.entity';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -54,6 +56,8 @@ export class TournamentsService {
     private readonly groupRepo: Repository<Group>,
     @InjectRepository(GroupMembers)
     private readonly groupMembersRepo: Repository<GroupMembers>,
+    @InjectRepository(Predictions)
+    private readonly predictionsRepo: Repository<Predictions>,
 
     private readonly footballService: FootballService,
     private readonly updatesService: UpdatesService,
@@ -470,5 +474,71 @@ export class TournamentsService {
     }
 
     return code;
+  }
+
+  async getGroupPredictions(groupId: number) {
+    console.log('try to get predictions for group:', groupId);
+    const predictions = this.predictionsRepo.find({
+      where: { group_id: groupId },
+      // relations: { match: true },
+    });
+    // console.log('predictions:', predictions);
+    return predictions;
+  }
+
+  async getCompetitionMatches(competionId: number, seasonId: number) {
+    console.log(
+      'try to get matches for competition:',
+      competionId,
+      'season:',
+      seasonId,
+    );
+    const matches = this.matchesRepo.find({
+      where: { tournament_id: competionId, season_id: seasonId },
+    });
+
+    return matches;
+  }
+
+  async upsertPrediction(
+    userId: number,
+    groupId: number,
+    matchId: number,
+    homeScore: number,
+    awayScore: number,
+  ) {
+    console.log('try to upsert prediction (service)');
+
+    /* Check if the match exists */
+    const match = await this.matchesRepo.findOne({ where: { id: matchId } });
+    if (!match) {
+      throw new NotFoundException('Match not found');
+    }
+
+    /* Check if the user is a member of the group */
+    const membership = await this.groupMembersRepo.findOne({
+      where: { user_id: userId, group_id: groupId, status: 'verified' },
+    });
+    if (!membership) {
+      throw new UnauthorizedException(
+        'User is not a verified member of this group',
+      );
+    }
+
+    /* Check if the match has started */
+    if (match.start_time && new Date(match.start_time) < new Date()) {
+      throw new BadRequestException('Cannot predict after match has started');
+    }
+
+    return await this.predictionsRepo.upsert(
+      {
+        user_id: userId,
+        group_id: groupId,
+        match_id: matchId,
+        home_score: homeScore,
+        away_score: awayScore,
+      },
+      ['user_id', 'group_id', 'match_id'],
+    );
   }
 }

@@ -485,6 +485,130 @@ export class TournamentsController {
     }
   }
 
+  @Get('groups/:groupId/predictions')
+  async getGroupPredictions(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+  ) {
+    try {
+      console.log('try to get group predictions (controller)');
+      this.authService.checkAccessTokenFromRequest(req);
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      /* Check if user is member of the group. */
+      const group = await this.tournamentsService.findGroupById(groupId, true);
+
+      if (!group) {
+        throw new BadRequestException({
+          message: 'Group not found',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      if (!group.members.find((member) => member.user_id === user.id)) {
+        throw new UnauthorizedException('You are not member of this group');
+      }
+
+      const matches = await this.tournamentsService.getCompetitionMatches(
+        group.tournament_id,
+        group.season_id,
+      );
+
+      const predictions =
+        await this.tournamentsService.getGroupPredictions(groupId);
+
+      // TODO prepare data for frontend
+
+      // return predictions;
+      return {
+        group: {
+          id: group.id,
+          name: group.name,
+          members: group.members
+            .filter((member) => member.status === 'verified')
+            .map((member) => ({
+              id: member.id,
+              user_id: member.user_id,
+              nickname: member.user?.nickname,
+            })),
+          tournament: group.tournament,
+          season: group.season,
+        },
+        predictions: predictions,
+        matches: matches,
+      };
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('groups/:groupId/predictions')
+  async upsertPrediction(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+    @Body() body: { matchId: number; homeScore: number; awayScore: number },
+  ) {
+    try {
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (!body || !body.matchId || !body.homeScore || !body.awayScore) {
+        throw new BadRequestException({
+          message: 'Match ID, home score, and away score are required',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      if (
+        isNaN(Number(body.homeScore)) ||
+        isNaN(Number(body.awayScore)) ||
+        Number(body.homeScore) < 0 ||
+        Number(body.awayScore) < 0
+      ) {
+        throw new BadRequestException({
+          message: 'Home score and away score must be numbers and >= 0',
+        });
+      }
+
+      return await this.tournamentsService.upsertPrediction(
+        user.id,
+        groupId,
+        body.matchId,
+        body.homeScore,
+        body.awayScore,
+      );
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Delete('groups/:groupId')
   async deleteGroupByOwner(
     @Req() req: Request,
