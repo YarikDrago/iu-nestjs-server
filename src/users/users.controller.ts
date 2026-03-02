@@ -16,8 +16,21 @@ export class UsersController {
 
   @Get('test-mail')
   async testMail() {
-    console.log('try to send email');
-    await this.mailService.sendTestMail();
-    throw new HttpException('Temporary error (msg)', HttpStatus.BAD_REQUEST);
+    try {
+      console.log('try to send email');
+      await this.mailService.sendTestMail();
+      return { success: true, message: 'Email sent successfully' };
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
