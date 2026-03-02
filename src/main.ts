@@ -12,8 +12,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(4000);
-  console.log('NestJS server running on http://localhost:4000');
+  const port = Number.parseInt(process.env.PORT ?? '', 10) || 4000;
+  await app.listen(port);
+  console.log(`NestJS server running on http://localhost:${port}`);
 
   const tournamentsService = app.get(TournamentsService);
 
