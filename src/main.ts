@@ -5,6 +5,8 @@ import { TournamentsService } from './tournaments/tournaments.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.setGlobalPrefix('api');
+
   // Разрешаем запросы с Next.js
   app.enableCors({
     origin: ['http://localhost:6600', 'http://localhost:3000'], // адрес вашего Next.js
