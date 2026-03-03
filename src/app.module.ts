@@ -24,6 +24,7 @@ import { ResetPassword } from './auth/entities/reset_passowrd.entity';
 import { Predictions } from './tournaments/entities/predictions.entity';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { SystemModule } from './system/system.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { join } from 'path';
           }
         : undefined,
     }),
+    SystemModule,
     UsersModule,
     AuthModule,
     RefreshTokenModule,
