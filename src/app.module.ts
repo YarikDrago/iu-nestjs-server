@@ -30,7 +30,7 @@ import { SystemModule } from './system/system.module';
   imports: [
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client/dist'),
-      exclude: ['/api*'], //
+      exclude: ['/api'],
     }),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
