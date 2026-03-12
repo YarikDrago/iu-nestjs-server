@@ -180,15 +180,16 @@ export class AuthController {
       console.log('refresh Token is not found');
       throw new UnauthorizedException('Refresh token is not found');
     }
-    console.log('refresh Token:', refreshToken);
     const result = await this.refreshTokenService.check(refreshToken);
 
     if (!result) {
       console.log('Refresh token is invalid');
       throw new UnauthorizedException('Refresh token is invalid');
     }
-    console.log('result:', result);
-    return result;
+
+    return {
+      user_id: result.user_id,
+    };
   }
 
   @Get('refresh-tokens')
