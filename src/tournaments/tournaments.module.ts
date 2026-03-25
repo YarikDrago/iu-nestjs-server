@@ -13,6 +13,7 @@ import { Group } from './entities/group.entity';
 import { GroupMembers } from './entities/group_members.entity';
 import { MailModule } from '../mail/mail.module';
 import { Predictions } from './entities/predictions.entity';
+import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { Predictions } from './entities/predictions.entity';
     UpdatesModule,
     MailModule,
   ],
-  providers: [TournamentsService],
+  providers: [TournamentsService, TournamentsPredictionsService],
   exports: [TournamentsService],
   controllers: [TournamentsController],
 })

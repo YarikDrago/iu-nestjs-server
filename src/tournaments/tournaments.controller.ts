@@ -20,11 +20,13 @@ import { FootballService } from '../football/football.service';
 import { UsersService } from '../users/users.service';
 import { FootballCompetitionMatchesDto } from '../football/dto/football-competition-matches.dto';
 import { MailService } from '../mail/mail.service';
+import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
 
 @Controller('tournaments')
 export class TournamentsController {
   constructor(
     private readonly tournamentsService: TournamentsService,
+    private readonly tournamentsPredictionsService: TournamentsPredictionsService,
     private readonly footballService: FootballService,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
@@ -520,7 +522,7 @@ export class TournamentsController {
       );
 
       const predictions =
-        await this.tournamentsService.getGroupPredictions(groupId);
+        await this.tournamentsPredictionsService.getGroupPredictions(groupId);
 
       // TODO prepare data for frontend
 
@@ -588,7 +590,7 @@ export class TournamentsController {
         });
       }
 
-      return await this.tournamentsService.upsertPrediction(
+      return await this.tournamentsPredictionsService.upsertPrediction(
         user.id,
         groupId,
         body.matchId,
