@@ -45,6 +45,9 @@ export class Predictions {
   @Column({ type: 'int' })
   away_score: number;
 
+  @Column({ type: 'int' })
+  points: number;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'TIMESTAMP',
