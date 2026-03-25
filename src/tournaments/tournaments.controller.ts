@@ -13,7 +13,7 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import { TournamentsService } from './tournaments.service';
+import { TournamentsService } from './services/tournaments.service';
 import { AuthService } from '../auth/auth.service';
 import type { Request } from 'express';
 import { FootballService } from '../football/football.service';

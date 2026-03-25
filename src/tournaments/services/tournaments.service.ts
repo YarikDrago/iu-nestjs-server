@@ -6,15 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { Tournaments } from './entities/tournament.entity';
-import { FootballService } from '../football/football.service';
-import { Seasons } from './entities/seasons.entity';
-import { Matches } from './entities/matches.entity';
-import { UpdatesService } from '../updates/updates.service';
-import { Group } from './entities/group.entity';
+import { Tournaments } from '../entities/tournament.entity';
+import { FootballService } from '../../football/football.service';
+import { Seasons } from '../entities/seasons.entity';
+import { Matches } from '../entities/matches.entity';
+import { UpdatesService } from '../../updates/updates.service';
+import { Group } from '../entities/group.entity';
 import { randomBytes } from 'node:crypto';
-import { GroupMembers } from './entities/group_members.entity';
-import { Predictions } from './entities/predictions.entity';
+import { GroupMembers } from '../entities/group_members.entity';
+import { Predictions } from '../entities/predictions.entity';
 
 export type UpsertSeasonInput = {
   externalId: number;

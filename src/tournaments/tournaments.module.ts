@@ -1,4 +1,4 @@
-import { TournamentsService } from './tournaments.service';
+import { TournamentsService } from './services/tournaments.service';
 import { Module } from '@nestjs/common';
 import { FootballModule } from '../football/football.module';
 import { TournamentsController } from './tournaments.controller';

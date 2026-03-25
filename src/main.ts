@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { TournamentsService } from './tournaments/tournaments.service';
+import { TournamentsService } from './tournaments/services/tournaments.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
