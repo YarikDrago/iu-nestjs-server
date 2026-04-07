@@ -9,6 +9,7 @@ import { Predictions } from '../entities/predictions.entity';
 import { Repository } from 'typeorm';
 import { Matches } from '../entities/matches.entity';
 import { GroupMembers } from '../entities/group_members.entity';
+import { UpdatesGateway } from '../../updates/updates.gateway';
 
 @Injectable()
 export class TournamentsPredictionsService {
@@ -19,6 +20,7 @@ export class TournamentsPredictionsService {
     private readonly groupMembersRepo: Repository<GroupMembers>,
     @InjectRepository(Predictions)
     private readonly predictionsRepo: Repository<Predictions>,
+    private readonly updatesGateway: UpdatesGateway,
   ) {}
 
   async getGroupPredictions(groupId: number) {
@@ -61,7 +63,7 @@ export class TournamentsPredictionsService {
       throw new BadRequestException('Cannot predict after match has started');
     }
 
-    return await this.predictionsRepo.upsert(
+    const response = await this.predictionsRepo.upsert(
       {
         user_id: userId,
         group_id: groupId,
@@ -71,5 +73,16 @@ export class TournamentsPredictionsService {
       },
       ['user_id', 'group_id', 'match_id'],
     );
+
+    this.updatesGateway.sendGroupPredictionUpdate({
+      id: Number(response.identifiers[0].id),
+      user_id: userId,
+      group_id: groupId,
+      match_id: matchId,
+      home_score: homeScore,
+      away_score: awayScore,
+    });
+    // console.log('prediction upserted');
+    return response;
   }
 }

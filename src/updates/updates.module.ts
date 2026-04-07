@@ -4,6 +4,6 @@ import { UpdatesService } from './updates.service';
 
 @Module({
   providers: [UpdatesGateway, UpdatesService],
-  exports: [UpdatesService],
+  exports: [UpdatesGateway, UpdatesService],
 })
 export class UpdatesModule {}
