@@ -95,6 +95,7 @@ export class AuthController {
       return {
         nickname: user.nickname,
         roles: roles,
+        userId: user.id,
       };
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
