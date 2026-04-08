@@ -9,6 +9,8 @@ import {
 import { Server, Socket } from 'socket.io';
 import { UpdatesService } from './updates.service';
 import { OnModuleInit } from '@nestjs/common';
+import { FootballMatchDto } from '../football/dto/football-match.dto';
+import { UpsertMatchInput } from '../tournaments/services/tournaments.service';
 
 interface MatchPredictionUpdatePayload {
   /* Prediction ID */
@@ -34,7 +36,7 @@ export class UpdatesGateway implements OnGatewayConnection, OnModuleInit {
   constructor(private readonly updatesService: UpdatesService) {}
 
   onModuleInit() {
-    this.updatesService.lastUpdateAt$.subscribe((lastUpdateAt) => {
+    this.updatesService.lastUpdateAt.subscribe((lastUpdateAt) => {
       this.server.emit('lastUpdate', { lastUpdateAt });
     });
   }
@@ -43,14 +45,6 @@ export class UpdatesGateway implements OnGatewayConnection, OnModuleInit {
     console.log('WS client connected', client.id);
     const lastUpdateAt = this.updatesService.getLastUpdateAt();
     client.emit('lastUpdate', { lastUpdateAt });
-  }
-
-  emitGroupPredictionsUpdated(groupId: number, payload?: any) {
-    console.log('Emit group predictions updated (gateway):', groupId);
-    this.server.to(`group-${groupId}`).emit('group:predictionsUpdated', {
-      groupId,
-      ...payload,
-    });
   }
 
   @SubscribeMessage('group:join')
@@ -77,6 +71,7 @@ export class UpdatesGateway implements OnGatewayConnection, OnModuleInit {
   sendGroupPredictionUpdate(payload: MatchPredictionUpdatePayload): void {
     const timestamp = new Date().toISOString();
     console.log('Send group prediction update');
+    // TODO rename to group:prediction:update
     this.server.to(`group-${payload.group_id}`).emit('group:test', payload);
     console.log(
       'Sent group:test to room',
@@ -84,5 +79,9 @@ export class UpdatesGateway implements OnGatewayConnection, OnModuleInit {
       'at',
       timestamp,
     );
+  }
+
+  sendMatchesUpdate(matches: UpsertMatchInput[]) {
+    this.server.emit('matches', matches);
   }
 }

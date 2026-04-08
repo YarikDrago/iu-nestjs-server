@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { FindManyOptions, In, Repository } from 'typeorm';
 import { Tournaments } from '../entities/tournament.entity';
 import { FootballService } from '../../football/football.service';
 import { Seasons } from '../entities/seasons.entity';
@@ -13,6 +13,8 @@ import { UpdatesService } from '../../updates/updates.service';
 import { Group } from '../entities/group.entity';
 import { randomBytes } from 'node:crypto';
 import { GroupMembers } from '../entities/group_members.entity';
+import { FootballMatchDto } from '../../football/dto/football-match.dto';
+import { UpdatesGateway } from '../../updates/updates.gateway';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -57,14 +59,21 @@ export class TournamentsService {
 
     private readonly footballService: FootballService,
     private readonly updatesService: UpdatesService,
+    private readonly updatesGateway: UpdatesGateway,
   ) {}
 
   async getAllTournaments() {
     return await this.tournamentsRepo.find();
   }
 
-  async getAllObservableTournaments() {
-    return await this.tournamentsRepo.find({ where: { isObservable: true } });
+  async getAllObservableTournaments(isExtended = false) {
+    const options: FindManyOptions<Tournaments> = {
+      where: { isObservable: true },
+    };
+    if (isExtended) {
+      //
+    }
+    return await this.tournamentsRepo.find(options);
   }
 
   async getObservableTournamentsWithCurrentSeason() {
@@ -164,6 +173,75 @@ export class TournamentsService {
       })),
       ['external_id'],
     );
+  }
+
+  async getMatchesOfCurrentSeasonsForObservableTournaments(): Promise<
+    Matches[]
+  > {
+    return this.matchesRepo
+      .createQueryBuilder('m')
+      .innerJoin(Seasons, 's', 's.id = m.season_id')
+      .innerJoin(Tournaments, 't', 't.id = m.tournament_id')
+      .where('s.is_current = :isCurrent', { isCurrent: true })
+      .andWhere('t.isObservable = :isObservable', { isObservable: true })
+      .getMany();
+  }
+
+  /* */
+  findChangedMatches(
+    matchesFromApi: FootballMatchDto[],
+    matchesFromDb: Matches[],
+  ): FootballMatchDto[] {
+    const changedMatches: FootballMatchDto[] = [];
+    const dbMatchesByExternalId = new Map<number, Matches>();
+    for (const dbMatch of matchesFromDb) {
+      dbMatchesByExternalId.set(Number(dbMatch.external_id), dbMatch);
+    }
+
+    for (const match of matchesFromApi) {
+      /* For testing of updates. DEV MODE ONLY!!! */
+      // if (match.id == 537327) {
+      //   this.manualMatchChange(match);
+      // }
+
+      const dbMatch = dbMatchesByExternalId.get(Number(match.id));
+      const homeScoreApi = match.score.fullTime.home;
+      const awayScoreApi = match.score.fullTime.away;
+      const statusApi = match.status || '';
+      const startTimeApi = new Date(match.utcDate);
+
+      /* If the match is not in the database, it means that it has been "changed"/new */
+      if (!dbMatch) {
+        changedMatches.push(match);
+        continue;
+      }
+
+      /* Compare with the existing match in the database */
+      const isStatusChanged = (dbMatch.status || '') !== statusApi;
+      const isHomeScoreChanged = (dbMatch.home_score ?? null) !== homeScoreApi;
+      const isAwayScoreChanged = (dbMatch.away_score ?? null) !== awayScoreApi;
+
+      const dbStartTime = dbMatch.start_time
+        ? new Date(dbMatch.start_time)
+        : null;
+      const isStartTimeChanged =
+        (dbStartTime?.getTime() ?? null) !== startTimeApi.getTime();
+
+      /* Skip if nothing has changed */
+      if (
+        !isStatusChanged &&
+        !isHomeScoreChanged &&
+        !isAwayScoreChanged &&
+        !isStartTimeChanged
+      ) {
+        continue;
+      }
+
+      /* Add the match to the list of changed matches if any of the following conditions are met */
+      changedMatches.push(match);
+    }
+
+    return changedMatches;
   }
 
   async upsertMatches(inputs: UpsertMatchInput[]) {
@@ -283,36 +361,65 @@ export class TournamentsService {
   /* Update matches of all observable tournaments. */
   async updateMatchesOfCompetitions() {
     console.log('try to update matches of competitions (service)');
-    const observableTournamentsExternalIds = (
-      await this.getAllObservableTournaments()
-    ).map((t) => String(t.external_id));
+    const observableTournamentsDataDb =
+      await this.getAllObservableTournaments(true);
+    const observableTournamentsExternalIds = observableTournamentsDataDb.map(
+      (t) => String(t.external_id),
+    );
 
-    const competitionsMatchesDataApi =
-      await this.footballService.getCompetitionMatches(
-        observableTournamentsExternalIds,
-      );
+    const [competitionsMatchesDataApi, competitionsMatchesDataDb] =
+      await Promise.all([
+        this.footballService.getCompetitionMatches(
+          observableTournamentsExternalIds,
+        ),
+        this.getMatchesOfCurrentSeasonsForObservableTournaments(),
+      ]);
 
-    const preparedMatchesData: UpsertMatchInput[] = [];
+    const matchesFromCompetitionsApi = (): FootballMatchDto[] => {
+      const matches: FootballMatchDto[] = [];
+      for (const competition of competitionsMatchesDataApi) {
+        matches.push(...competition.matches);
+      }
+      return matches;
+    };
 
-    for (const competition of competitionsMatchesDataApi) {
-      for (const match of competition.matches) {
-        preparedMatchesData.push({
-          externalId: match.id,
+    /* Extract matches that have been changed since the last update. */
+    const updatedMatchesApi: FootballMatchDto[] = this.findChangedMatches(
+      matchesFromCompetitionsApi(),
+      competitionsMatchesDataDb,
+    );
+
+    const transformApiMatchesToDbMatches = (
+      matches: FootballMatchDto[],
+    ): UpsertMatchInput[] => {
+      return matches.map((match) => {
+        const homeScoreApi = match.score.fullTime.home;
+        const awayScoreApi = match.score.fullTime.away;
+        const statusApi = match.status || '';
+        const startTimeApi = new Date(match.utcDate);
+
+        // TODO calculate score (write separate function)
+
+        return {
+          externalId: Number(match.id),
           seasonExternalId: match.season.id,
           tournamentExternalId: match.competition.id,
           homeTeam: match.homeTeam.name || '',
           awayTeam: match.awayTeam.name || '',
-          startTime: new Date(match.utcDate),
-          status: match.status || '',
-          homeScore: match.score.fullTime.home,
-          awayScore: match.score.fullTime.away,
-        });
-      }
-    }
+          startTime: startTimeApi,
+          status: statusApi,
+          homeScore: homeScoreApi,
+          awayScore: awayScoreApi,
+        };
+      });
+    };
 
-    await this.upsertMatches(preparedMatchesData);
+    const transformedApiMaches =
+      transformApiMatchesToDbMatches(updatedMatchesApi);
 
-    this.updatesService.setLastUpdateNow();
+    await this.upsertMatches(transformedApiMaches);
+
+    this.updatesGateway.sendMatchesUpdate(transformedApiMaches);
 
     console.log('Matches were successfully updated!');
   }
@@ -484,5 +591,17 @@ export class TournamentsService {
     });
 
     return matches;
+  }
+
+  // TODO rename Matches to Match
+  /* This function is used for testing.
+   * Simulates a change in the match. */
+  manualMatchChange(match: FootballMatchDto) {
+    const generateNewScore = () => {
+      const randomScore = Math.floor(Math.random() * 10);
+      return randomScore;
+    };
+    match.score.fullTime.home = generateNewScore();
+    match.score.fullTime.away = generateNewScore();
   }
 }
