@@ -7,20 +7,10 @@ export class UpdatesService {
     null,
   );
 
-  readonly lastUpdateAt$: Observable<string | null> =
+  readonly lastUpdateAt: Observable<string | null> =
     this.lastUpdateAtSubject.asObservable();
 
   getLastUpdateAt(): string | null {
     return this.lastUpdateAtSubject.getValue();
-  }
-
-  setLastUpdateNow(): string {
-    const iso = new Date().toISOString();
-    this.lastUpdateAtSubject.next(iso);
-    return iso;
-  }
-
-  setLastUpdate(isoString: string): void {
-    this.lastUpdateAtSubject.next(isoString);
   }
 }
