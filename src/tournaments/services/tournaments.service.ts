@@ -393,12 +393,9 @@ export class TournamentsService {
       matches: FootballMatchDto[],
     ): UpsertMatchInput[] => {
       return matches.map((match) => {
-        const homeScoreApi = match.score.fullTime.home;
-        const awayScoreApi = match.score.fullTime.away;
         const statusApi = match.status || '';
         const startTimeApi = new Date(match.utcDate);
-
-        // TODO calculate score (write separate function)
+        const { homeScore, awayScore } = this.calculateMatchScore(match);
 
         return {
           externalId: Number(match.id),
@@ -408,8 +405,8 @@ export class TournamentsService {
           awayTeam: match.awayTeam.name || '',
           startTime: startTimeApi,
           status: statusApi,
-          homeScore: homeScoreApi,
-          awayScore: awayScoreApi,
+          homeScore: homeScore,
+          awayScore: awayScore,
         };
       });
     };
@@ -422,6 +419,14 @@ export class TournamentsService {
     this.updatesGateway.sendMatchesUpdate(transformedApiMaches);
 
     console.log('Matches were successfully updated!');
+  }
+
+  calculateMatchScore(match: FootballMatchDto) {
+    const homeScore: number =
+      (match.score.regularTime?.home || 0) + (match.score.extraTime?.home || 0);
+    const awayScore: number =
+      (match.score.regularTime?.away || 0) + (match.score.extraTime?.away || 0);
+    return { homeScore, awayScore };
   }
 
   async addNewGroup(input: UpsertGroupInput): Promise<Group> {
