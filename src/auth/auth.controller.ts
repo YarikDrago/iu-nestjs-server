@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
@@ -390,5 +391,21 @@ export class AuthController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Delete('access-token')
+  deleteAccessToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    console.log('try to delete access token');
+    const rawCookieHeader = req.headers.cookie ?? '';
+    const cookies = cookie.parse(rawCookieHeader);
+    const accessToken = cookies['accessToken'];
+    if (!accessToken) {
+      throw new UnauthorizedException('Access token is not found');
+    }
+    this.authService.deleteAccessTokenFromCookies(res);
+    return 'Access token deleted';
   }
 }

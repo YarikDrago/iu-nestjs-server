@@ -10,7 +10,7 @@ import {
 } from '../refreshToken/refresh-token.service';
 import { UsersService } from '../users/users.service';
 import * as jwt from 'jsonwebtoken';
-import type { Response, Request } from 'express';
+import type { Request, Response } from 'express';
 import * as cookie from 'cookie';
 import { User } from '../users/entities/user.entity';
 import { ResetPassword } from './entities/reset_passowrd.entity';
@@ -26,18 +26,6 @@ export class AuthService {
     @InjectRepository(ResetPassword)
     private readonly resetPasswordRepo: Repository<ResetPassword>,
   ) {}
-
-  private getCookieOrThrow(req: Request, name: string): string {
-    const rawCookieHeader = req.headers.cookie ?? '';
-    const cookies = cookie.parse(rawCookieHeader);
-    const value = cookies[name];
-
-    if (!value) {
-      throw new UnauthorizedException(`${name} is not found`);
-    }
-
-    return value;
-  }
 
   checkAccessToken(accessToken: string) {
     console.log('access Token:', accessToken);
@@ -217,5 +205,27 @@ export class AuthService {
     resetToken.used_at = new Date();
     await this.resetPasswordRepo.save(resetToken);
     return resetToken.user;
+  }
+
+  deleteAccessTokenFromCookies(res: Response) {
+    res.cookie('accessToken', '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 0,
+      path: '/',
+    });
+  }
+
+  private getCookieOrThrow(req: Request, name: string): string {
+    const rawCookieHeader = req.headers.cookie ?? '';
+    const cookies = cookie.parse(rawCookieHeader);
+    const value = cookies[name];
+
+    if (!value) {
+      throw new UnauthorizedException(`${name} is not found`);
+    }
+
+    return value;
   }
 }
