@@ -205,8 +205,7 @@ export class TournamentsService {
       // }
 
       const dbMatch = dbMatchesByExternalId.get(Number(match.id));
-      const homeScoreApi = match.score.fullTime.home;
-      const awayScoreApi = match.score.fullTime.away;
+      const { homeScore, awayScore } = this.calculateMatchScore(match);
       const statusApi = match.status || '';
       const startTimeApi = new Date(match.utcDate);
 
@@ -218,8 +217,8 @@ export class TournamentsService {
 
       /* Compare with the existing match in the database */
       const isStatusChanged = (dbMatch.status || '') !== statusApi;
-      const isHomeScoreChanged = (dbMatch.home_score ?? null) !== homeScoreApi;
-      const isAwayScoreChanged = (dbMatch.away_score ?? null) !== awayScoreApi;
+      const isHomeScoreChanged = (dbMatch.home_score ?? null) !== homeScore;
+      const isAwayScoreChanged = (dbMatch.away_score ?? null) !== awayScore;
 
       const dbStartTime = dbMatch.start_time
         ? new Date(dbMatch.start_time)
@@ -350,7 +349,7 @@ export class TournamentsService {
         away_team: match.awayTeam,
         start_time: match.startTime,
         status: match.status,
-        home_score: match.homeScore,
+        home_score: match.homeScore, // Score already calculated
         away_score: match.awayScore,
       };
     });
@@ -411,12 +410,12 @@ export class TournamentsService {
       });
     };
 
-    const transformedApiMaches =
+    const transformedApiMatches =
       transformApiMatchesToDbMatches(updatedMatchesApi);
 
-    await this.upsertMatches(transformedApiMaches);
+    await this.upsertMatches(transformedApiMatches);
 
-    this.updatesGateway.sendMatchesUpdate(transformedApiMaches);
+    this.updatesGateway.sendMatchesUpdate(transformedApiMatches);
 
     console.log('Matches were successfully updated!');
   }
@@ -606,7 +605,13 @@ export class TournamentsService {
       const randomScore = Math.floor(Math.random() * 10);
       return randomScore;
     };
-    match.score.fullTime.home = generateNewScore();
-    match.score.fullTime.away = generateNewScore();
+    match.score.regularTime = {
+      home: generateNewScore(),
+      away: generateNewScore(),
+    };
+    match.score.extraTime = {
+      home: generateNewScore(),
+      away: generateNewScore(),
+    };
   }
 }
