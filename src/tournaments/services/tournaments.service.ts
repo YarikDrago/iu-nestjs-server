@@ -421,10 +421,16 @@ export class TournamentsService {
   }
 
   calculateMatchScore(match: FootballMatchDto) {
-    const homeScore: number =
-      (match.score.regularTime?.home || 0) + (match.score.extraTime?.home || 0);
-    const awayScore: number =
-      (match.score.regularTime?.away || 0) + (match.score.extraTime?.away || 0);
+    let homeScore: number | null = match.score.fullTime.home;
+    let awayScore: number | null = match.score.fullTime.away;
+    if (match.score.regularTime && match.score.extraTime) {
+      homeScore =
+        (match.score.regularTime?.home || 0) +
+        (match.score.extraTime?.home || 0);
+      awayScore =
+        (match.score.regularTime?.away || 0) +
+        (match.score.extraTime?.away || 0);
+    }
     return { homeScore, awayScore };
   }
 
