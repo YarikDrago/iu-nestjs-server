@@ -499,9 +499,10 @@ export class TournamentsService {
 
   async getUserGroups(userId: number): Promise<Group[]> {
     console.log('try to get my groups (service)', userId);
-    /* Get groups where the user is owner or member. */
+    /* Get groups where the user is owner or verified member. */
     const userInGroups = await this.groupMembersRepo.find({
-      where: { user_id: userId },
+      // TODO replace hardcoded value with constant
+      where: { user_id: userId, status: 'verified' },
       relations: { group: true },
     });
     console.log('userInGroups:', userInGroups);
