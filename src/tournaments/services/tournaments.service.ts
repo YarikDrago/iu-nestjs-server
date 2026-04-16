@@ -565,13 +565,15 @@ export class TournamentsService {
 
   async updateGroupInviteCode(groupId: number, userId: number) {
     console.log('try to update group invite code (service)');
+    const newInviteCode = this.generateInviteCode();
     const response = await this.groupRepo.update(
       { id: groupId, owner_id: userId },
-      { invite_code: this.generateInviteCode() },
+      { invite_code: newInviteCode },
     );
     if (response.affected === 0) {
       throw new NotFoundException('Group not found');
     }
+    return newInviteCode;
   }
 
   generateInviteCode(length = 10): string {

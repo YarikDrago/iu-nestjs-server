@@ -418,8 +418,16 @@ export class TournamentsController {
         throw new UnauthorizedException('User not found');
       }
 
-      await this.tournamentsService.updateGroupInviteCode(groupId, user.id);
-      return true;
+      const group = await this.tournamentsService.findGroupById(groupId, true);
+      if (user.id !== group?.owner_id) {
+        throw new UnauthorizedException('You are not owner of this group');
+      }
+
+      const newInviteCode = await this.tournamentsService.updateGroupInviteCode(
+        groupId,
+        user.id,
+      );
+      return { inviteCode: newInviteCode };
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
 
