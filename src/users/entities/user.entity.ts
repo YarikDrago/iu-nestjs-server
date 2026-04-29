@@ -1,14 +1,15 @@
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
+  Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { UserStatus } from './user-status.entity';
 import { UserActivationLink } from './user-activation-links.entity';
 import { UserRoles } from './user-roles.entity';
+import { UserTelegramAccounts } from './user-telegram-accounts.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -37,4 +38,10 @@ export class User {
 
   @OneToMany(() => UserRoles, (ur) => ur.user)
   userRoles!: UserRoles[];
+
+  @OneToMany(
+    () => UserTelegramAccounts,
+    (telegramAccount) => telegramAccount.user,
+  )
+  telegramAccounts: UserTelegramAccounts[];
 }

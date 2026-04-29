@@ -25,6 +25,8 @@ import { Predictions } from './tournaments/entities/predictions.entity';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SystemModule } from './system/system.module';
+import { TelegramModule } from './telegram/telegram.module';
+import { UserTelegramAccounts } from './users/entities/user-telegram-accounts.entity';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { SystemModule } from './system/system.module';
         UserActivationLink,
         UserRoles,
         UserRoleNames,
+        UserTelegramAccounts,
         RefreshToken,
         ResetPassword,
         Tournaments,
@@ -70,6 +73,7 @@ import { SystemModule } from './system/system.module';
     SystemModule,
     UsersModule,
     AuthModule,
+    TelegramModule,
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,
