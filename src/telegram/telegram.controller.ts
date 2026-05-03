@@ -1,0 +1,94 @@
+// telegram/telegram.controller.ts
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { TelegramService } from './telegram.service';
+import type { TelegramUpdate } from './telegram.types';
+
+@Controller('telegram')
+export class TelegramController {
+  private lastUpdateId: number | null = null;
+
+  constructor(private readonly telegramService: TelegramService) {}
+
+  @Get('me')
+  async me() {
+    return this.telegramService.getMe();
+  }
+
+  @Post('poll')
+  async poll(@Body() body: { limit?: number; timeout?: number } = {}) {
+    const offset =
+      this.lastUpdateId !== null ? this.lastUpdateId + 1 : undefined;
+
+    const updates = await this.telegramService.getUpdates({
+      offset,
+      limit: body.limit ?? 50,
+      timeout: body.timeout ?? 0,
+    });
+
+    if (updates.length > 0) {
+      const updateIds = updates
+        .map((update) => update.update_id)
+        .filter((updateId): updateId is number => typeof updateId === 'number');
+
+      if (updateIds.length > 0) {
+        this.lastUpdateId = Math.max(...updateIds);
+      }
+    }
+
+    const extracted = updates
+      .map(
+        (update) =>
+          update.message ??
+          update.edited_message ??
+          update.channel_post ??
+          update.edited_channel_post,
+      )
+      .filter((message) => message !== undefined)
+      .map((message) => ({
+        chatId: message.chat.id,
+        chatType: message.chat.type,
+        username: message.chat.username,
+        title: message.chat.title,
+        fromUserId: message.from?.id,
+        text: message.text,
+        date: message.date,
+      }));
+
+    return { updatesCount: updates.length, extracted };
+  }
+
+  @Post('webhook')
+  async onWebhook(@Body() update: TelegramUpdate) {
+    const message =
+      update.message ??
+      update.edited_message ??
+      update.channel_post ??
+      update.edited_channel_post;
+
+    console.log('Received message:', message);
+
+    const text = message?.text;
+    const chatId = message?.chat.id;
+
+    if (chatId && typeof text === 'string') {
+      const command = text.trim().split(/\s+/)[0];
+
+      if (command === '/start') {
+        await this.telegramService.sendMessage(
+          chatId,
+          'Hello! I am your Telegram bot.',
+        );
+      }
+
+      if (command === '/test_msg') {
+        const now = new Date().toISOString();
+        await this.telegramService.sendMessage(
+          chatId,
+          `Test message response: ${now}`,
+        );
+      }
+    }
+
+    return { ok: true };
+  }
+}
