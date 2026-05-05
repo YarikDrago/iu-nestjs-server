@@ -421,8 +421,22 @@ export class TournamentsService {
   }
 
   calculateMatchScore(match: FootballMatchDto) {
-    let homeScore: number | null = match.score.fullTime.home;
-    let awayScore: number | null = match.score.fullTime.away;
+    let homeScore: number | null = null;
+    let awayScore: number | null = null;
+    /* If a team gains points in the half of match,
+     * this points will be displayed only in halfTime */
+    if (match.score.halfTime.home !== null) {
+      homeScore = Math.max(
+        match.score.halfTime.home,
+        match.score.fullTime.home || 0,
+      );
+    }
+    if (match.score.halfTime.away !== null) {
+      awayScore = Math.max(
+        match.score.halfTime.away,
+        match.score.fullTime.away || 0,
+      );
+    }
     if (match.score.regularTime && match.score.extraTime) {
       homeScore =
         (match.score.regularTime?.home || 0) +
