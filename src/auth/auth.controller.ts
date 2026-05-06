@@ -5,6 +5,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  Param,
   Post,
   Req,
   Res,
@@ -21,6 +22,7 @@ import { MailService } from '../mail/mail.service';
 import { ActivateUserDto } from '../users/dto/activate-user.dto';
 import type { Request, Response } from 'express';
 import { randomUUID } from 'node:crypto';
+import { UserTelegramAccountDto } from '../users/dto/user-telegram-account.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -169,6 +171,66 @@ export class AuthController {
       userId: user.id,
       roles: user.userRoles.map((ur) => ur.role.name),
     };
+  }
+
+  @Post('telegram-account')
+  async addTelegramAccount(
+    @Req() req: Request,
+    @Body() dto: UserTelegramAccountDto,
+  ) {
+    console.log('try to add telegram account');
+    const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+    const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const telegramUserId = Number(dto?.telegramUserId);
+    if (!Number.isInteger(telegramUserId)) {
+      throw new HttpException(
+        'Telegram user ID is required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const chatId = dto?.chatId == null ? null : Number(dto.chatId);
+    if (chatId !== null && !Number.isInteger(chatId)) {
+      throw new HttpException('Chat ID is invalid', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.usersService.addUserTelegramAccount(user.id, {
+      ...dto,
+      telegramUserId,
+      chatId,
+    });
+  }
+
+  @Delete('telegram-account/:telegramUserId')
+  async deleteTelegramAccount(
+    @Req() req: Request,
+    @Param('telegramUserId') telegramUserIdParam: string,
+  ) {
+    console.log('try to delete telegram account');
+    const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+    const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const telegramUserId = Number(telegramUserIdParam);
+    if (!Number.isInteger(telegramUserId)) {
+      throw new HttpException(
+        'Telegram user ID is invalid',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.usersService.deleteUserTelegramAccount(
+      user.id,
+      telegramUserId,
+    );
   }
 
   @Get('check-refresh-token')

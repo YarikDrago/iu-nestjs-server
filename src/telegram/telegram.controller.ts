@@ -88,7 +88,10 @@ export class TelegramController {
           chatId,
           user
             ? 'Verified user'
-            : 'Unverified user.\nPlease verify your account:\n1) Create and activate account on https://uliantcev.ru/signup;\n2) Link your account with Telegram;',
+            : 'Unverified user.\nPlease verify your account:\n' +
+                '1) Create and activate account on https://uliantcev.ru/signup;\n' +
+                '2) Link your account with Telegram on https:"//uliantcev.ru/settings;\n' +
+                `Copy your telegram ID into the field: ${fromUserId}`,
         );
       }
 

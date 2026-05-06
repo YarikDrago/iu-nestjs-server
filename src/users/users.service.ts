@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { FindOneOptions, Repository } from 'typeorm';
@@ -7,6 +11,7 @@ import { UserStatus } from './entities/user-status.entity';
 import { UserActivationLink } from './entities/user-activation-links.entity';
 import * as bcrypt from 'bcrypt';
 import { UserTelegramAccounts } from './entities/user-telegram-accounts.entity';
+import { UserTelegramAccountDto } from './dto/user-telegram-account.dto';
 
 @Injectable()
 export class UsersService {
@@ -57,6 +62,48 @@ export class UsersService {
       where: { telegramUserId },
       relations: { user: true },
     });
+  }
+
+  async addUserTelegramAccount(
+    userId: number,
+    dto: UserTelegramAccountDto,
+  ): Promise<UserTelegramAccounts> {
+    const user = await this.findUserById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const existingAccount = await this.userTelegramAccountsRepository.findOne({
+      where: { telegramUserId: dto.telegramUserId },
+    });
+
+    if (existingAccount && Number(existingAccount.userId) !== Number(userId)) {
+      throw new BadRequestException('Telegram account is already linked');
+    }
+
+    const telegramAccount = this.userTelegramAccountsRepository.create({
+      id: existingAccount?.id,
+      userId,
+      telegramUserId: dto.telegramUserId,
+      username: dto.username ?? null,
+      firstName: dto.firstName ?? null,
+      lastName: dto.lastName ?? null,
+      chatId: dto.chatId ?? null,
+      linkedAt: existingAccount?.linkedAt ?? new Date(),
+    });
+
+    return await this.userTelegramAccountsRepository.save(telegramAccount);
+  }
+
+  async deleteUserTelegramAccount(userId: number, telegramUserId: number) {
+    const result = await this.userTelegramAccountsRepository.delete({
+      userId,
+      telegramUserId,
+    });
+
+    if (!result.affected) {
+      throw new NotFoundException('Telegram account not found');
+    }
+
+    return true;
   }
 
   async addNewUser(dto: RegisterUserDto): Promise<User> {
