@@ -52,6 +52,13 @@ export class UsersService {
     return await this.usersRepository.findOne({ where: { id: userId } });
   }
 
+  async findUserByTelegramUserId(telegramUserId: number) {
+    return await this.userTelegramAccountsRepository.findOne({
+      where: { telegramUserId },
+      relations: { user: true },
+    });
+  }
+
   async addNewUser(dto: RegisterUserDto): Promise<User> {
     /* Find inactive status */
     const inactiveStatus = await this.userStatusRepository.findOne({

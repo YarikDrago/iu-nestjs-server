@@ -73,14 +73,22 @@ export class TelegramController {
 
     const text = message?.text;
     const chatId = message?.chat.id;
+    const fromUserId = message?.from?.id;
 
     if (chatId && typeof text === 'string') {
       const command = text.trim().split(/\s+/)[0];
 
       if (command === '/start') {
+        const user =
+          typeof fromUserId === 'number'
+            ? await this.usersService.findUserByTelegramUserId(fromUserId)
+            : null;
+
         await this.telegramService.sendMessage(
           chatId,
-          'Hello! I am your Telegram bot.',
+          user
+            ? 'Verified user'
+            : 'Unverified user.\nPlease verify your account:\n1) Create and activate account on https://uliantcev.ru/signup;\n2) Link your account with Telegram;',
         );
       }
 
