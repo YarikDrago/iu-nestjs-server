@@ -6,6 +6,7 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { UserStatus } from './entities/user-status.entity';
 import { UserActivationLink } from './entities/user-activation-links.entity';
 import * as bcrypt from 'bcrypt';
+import { UserTelegramAccounts } from './entities/user-telegram-accounts.entity';
 
 @Injectable()
 export class UsersService {
@@ -18,6 +19,9 @@ export class UsersService {
 
     @InjectRepository(UserActivationLink)
     private readonly userActivationLinkRepository: Repository<UserActivationLink>,
+
+    @InjectRepository(UserTelegramAccounts)
+    private readonly userTelegramAccountsRepository: Repository<UserTelegramAccounts>,
   ) {}
 
   async createPasswordHash(password: string) {

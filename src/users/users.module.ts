@@ -7,10 +7,16 @@ import { UserStatus } from './entities/user-status.entity';
 import { UserActivationLink } from './entities/user-activation-links.entity';
 import { MailService } from '../mail/mail.service';
 import { RefreshTokenModule } from '../refreshToken/refresh-token.module';
+import { UserTelegramAccounts } from './entities/user-telegram-accounts.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserStatus, UserActivationLink]),
+    TypeOrmModule.forFeature([
+      User,
+      UserStatus,
+      UserActivationLink,
+      UserTelegramAccounts,
+    ]),
     RefreshTokenModule,
   ],
   providers: [UsersService, MailService],

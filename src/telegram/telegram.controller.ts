@@ -2,12 +2,16 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import type { TelegramUpdate } from './telegram.types';
+import { UsersService } from '../users/users.service';
 
 @Controller('telegram')
 export class TelegramController {
   private lastUpdateId: number | null = null;
 
-  constructor(private readonly telegramService: TelegramService) {}
+  constructor(
+    private readonly telegramService: TelegramService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get('me')
   async me() {
