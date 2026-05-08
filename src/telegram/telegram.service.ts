@@ -74,4 +74,19 @@ export class TelegramService {
     if (!this.token) throw new Error('TELEGRAM_BOT_TOKEN is not set');
     return `https://api.telegram.org/bot${this.token}/${method}`;
   }
+
+  async setMyCommands(
+    chatId: string | number,
+    commands: Array<{ command: string; description: string }>,
+  ): Promise<boolean> {
+    const data = await this.callApi<boolean>('setMyCommands', {
+      commands,
+      scope: {
+        type: 'chat',
+        chat_id: chatId,
+      },
+    });
+
+    return data.result;
+  }
 }

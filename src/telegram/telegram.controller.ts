@@ -84,15 +84,25 @@ export class TelegramController {
             ? await this.usersService.findUserByTelegramUserId(fromUserId)
             : null;
 
-        await this.telegramService.sendMessage(
-          chatId,
-          user
-            ? 'Verified user'
-            : 'Unverified user.\nPlease verify your account:\n' +
-                '1) Create and activate account on https://uliantcev.ru/signup;\n' +
-                '2) Link your account with Telegram on https:"//uliantcev.ru/settings;\n' +
-                `Copy your telegram ID into the field: ${fromUserId}`,
-        );
+        if (user) {
+          await this.telegramService.setMyCommands(chatId, [
+            { command: 'test_msg', description: 'Test message' },
+          ]);
+
+          await this.telegramService.sendMessage(chatId, 'Verified user');
+        } else {
+          await this.telegramService.setMyCommands(chatId, [
+            { command: 'start', description: 'Start a chat' },
+          ]);
+
+          await this.telegramService.sendMessage(
+            chatId,
+            'Unverified user.\nPlease verify your account:\n' +
+              '1) Create and activate account on https://uliantcev.ru/signup;\n' +
+              '2) Link your account with Telegram on https:"//uliantcev.ru/settings;\n' +
+              `Copy your telegram ID into the field: ${fromUserId}`,
+          );
+        }
       }
 
       if (command === '/test_msg') {
