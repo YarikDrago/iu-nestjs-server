@@ -37,12 +37,20 @@ export interface TelegramMessage {
   from?: TelegramUser;
 }
 
+export interface TelegramCallbackQuery {
+  id: string;
+  from: TelegramUser;
+  message?: TelegramMessage;
+  data?: string;
+}
+
 export interface TelegramUpdate {
   update_id: number;
   message?: TelegramMessage;
   edited_message?: TelegramMessage;
   channel_post?: TelegramMessage;
   edited_channel_post?: TelegramMessage;
+  callback_query?: TelegramCallbackQuery;
 }
 
 export interface TelegramSentMessage extends TelegramMessage {

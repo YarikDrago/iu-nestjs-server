@@ -14,6 +14,7 @@ export class TelegramService {
   async sendMessage(
     chatId: string | number,
     text: string,
+    options?: Record<string, unknown>,
   ): Promise<TelegramSentMessage> {
     console.log('try to send message to telegram');
 
@@ -21,6 +22,16 @@ export class TelegramService {
       chat_id: chatId,
       text,
       disable_web_page_preview: true,
+      ...options,
+    });
+
+    return data.result;
+  }
+
+  async answerCallbackQuery(callbackQueryId: string, text?: string) {
+    const data = await this.callApi<boolean>('answerCallbackQuery', {
+      callback_query_id: callbackQueryId,
+      text,
     });
 
     return data.result;
