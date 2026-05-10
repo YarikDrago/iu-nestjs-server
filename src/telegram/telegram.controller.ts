@@ -66,11 +66,13 @@ export class TelegramController {
 
   @Post('webhook')
   async onWebhook(@Body() update: TelegramUpdate) {
+    /* Telegram sends 'callback_query' when user interacts with inline keyboards (telegram buttons) */
     if (update.callback_query) {
       await this.handleCallbackQuery(update.callback_query);
       return { ok: true };
     }
 
+    /* For messages */
     const message =
       update.message ??
       update.edited_message ??
@@ -179,26 +181,65 @@ export class TelegramController {
       telegramAccount.user.id,
     );
 
-    await this.telegramService.sendMessage(
-      chatId,
-      this.formatPredictionsGroupsMessage(groups, telegramAccount.user.id),
-    );
-  }
-
-  private formatPredictionsGroupsMessage(groups: Group[], userId: number) {
     if (groups.length === 0) {
-      return 'You do not have verified tournament groups yet.';
+      await this.telegramService.sendMessage(
+        chatId,
+        'You do not have verified tournament groups yet.',
+      );
+      return;
     }
 
-    const lines = groups.flatMap((group, index) => [
+    await this.telegramService.sendMessage(chatId, 'Your prediction groups:');
+
+    /* Send the information of the group separately with buttons beneath */
+    for (const [index, group] of groups.entries()) {
+      const predictionsGroupMessage = this.formatPredictionsGroupMessage(
+        group,
+        index,
+        telegramAccount.user.id,
+      );
+
+      await this.telegramService.sendMessage(
+        chatId,
+        predictionsGroupMessage.text,
+        predictionsGroupMessage.options,
+      );
+    }
+  }
+
+  private formatPredictionsGroupMessage(
+    group: Group,
+    index: number,
+    userId: number,
+  ) {
+    const lines = [
       `${index + 1}. ${group.name}`,
       `Tournament: ${group.tournament?.name ?? 'Unknown'}`,
       `Season: ${this.formatDate(group.season?.start_date)} / ${this.formatDate(group.season?.end_date)}`,
+      `Group ID: ${group.id}`,
       `Role: ${Number(group.owner_id) === Number(userId) ? 'Owner' : 'Member'}`,
-      '',
-    ]);
+    ];
 
-    return ['Your prediction groups:', '', ...lines].join('\n').trim();
+    return {
+      text: lines.join('\n'),
+      options: {
+        reply_markup: {
+          /* Buttons */
+          inline_keyboard: [
+            [
+              {
+                text: 'See table',
+                callback_data: `predictions_group:${group.id}:table`,
+              },
+              {
+                text: 'settings',
+                callback_data: `predictions_group:${group.id}:settings`,
+              },
+            ],
+          ],
+        },
+      },
+    };
   }
 
   private formatDate(date?: Date | string) {
