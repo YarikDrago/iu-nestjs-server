@@ -14,6 +14,7 @@ import { GroupMembers } from './entities/group_members.entity';
 import { MailModule } from '../mail/mail.module';
 import { Predictions } from './entities/predictions.entity';
 import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
+import { GroupMemberNotificationSettings } from './entities/group_member_notification_settings.entity';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TournamentsPredictionsService } from './services/tournaments_prediction
       Matches,
       Group,
       GroupMembers,
+      GroupMemberNotificationSettings,
       Predictions,
     ]),
     FootballModule,

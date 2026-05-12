@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,13 @@ import {
 import { GroupMembers } from './group_members.entity';
 
 @Entity({ name: 'group_member_notification_settings' })
+@Index(
+  'UQ_group_member_notification_settings_group_member_id',
+  ['groupMemberId'],
+  {
+    unique: true,
+  },
+)
 export class GroupMemberNotificationSettings {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;

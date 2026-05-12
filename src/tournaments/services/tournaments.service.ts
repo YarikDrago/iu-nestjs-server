@@ -15,6 +15,7 @@ import { randomBytes } from 'node:crypto';
 import { GroupMembers } from '../entities/group_members.entity';
 import { FootballMatchDto } from '../../football/dto/football-match.dto';
 import { UpdatesGateway } from '../../updates/updates.gateway';
+import { GroupMemberNotificationSettings } from '../entities/group_member_notification_settings.entity';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -56,6 +57,8 @@ export class TournamentsService {
     private readonly groupRepo: Repository<Group>,
     @InjectRepository(GroupMembers)
     private readonly groupMembersRepo: Repository<GroupMembers>,
+    @InjectRepository(GroupMemberNotificationSettings)
+    private readonly groupMemberNotificationSettingsRepo: Repository<GroupMemberNotificationSettings>,
 
     private readonly footballService: FootballService,
     private readonly updatesService: UpdatesService,
@@ -508,7 +511,19 @@ export class TournamentsService {
       user_id: userId,
       status,
     });
-    return await this.groupMembersRepo.save(groupMemberEntity);
+
+    return await this.groupMembersRepo.manager.transaction(async (manager) => {
+      const groupMember = await manager.save(GroupMembers, groupMemberEntity);
+
+      await manager.save(
+        GroupMemberNotificationSettings,
+        this.groupMemberNotificationSettingsRepo.create({
+          groupMemberId: groupMember.id,
+        }),
+      );
+
+      return groupMember;
+    });
   }
 
   async getUserGroups(userId: number): Promise<Group[]> {
