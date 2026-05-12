@@ -27,6 +27,7 @@ import { join } from 'path';
 import { SystemModule } from './system/system.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { UserTelegramAccounts } from './users/entities/user-telegram-accounts.entity';
+import { GroupMemberNotificationSettings } from './tournaments/entities/group_member_notification_settings.entity';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { UserTelegramAccounts } from './users/entities/user-telegram-accounts.en
         Matches, // All matches from competitions
         Group, // Groups for prediction tournaments
         GroupMembers,
+        GroupMemberNotificationSettings,
         Predictions,
       ],
       // synchronize: true, // WARNING!
