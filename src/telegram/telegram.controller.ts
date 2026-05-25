@@ -170,6 +170,21 @@ export class TelegramController {
         settingsGroupId,
       );
     }
+
+    const updateSettingsCallback =
+      this.parsePredictionsGroupUpdateNotificationSettingCallback(callbackData);
+
+    if (updateSettingsCallback) {
+      const chatId = callbackQuery.message?.chat.id;
+      if (!chatId) return;
+
+      await this.updateUserPredictionsGroupNotifyMatchStatusChanged(
+        chatId,
+        callbackQuery.from.id,
+        updateSettingsCallback.groupId,
+        updateSettingsCallback.value,
+      );
+    }
   }
 
   private async sendUserPredictionsGroups(
@@ -285,7 +300,7 @@ export class TelegramController {
     await this.telegramService.sendMessage(
       chatId,
       this.formatPredictionGroupNotificationSettingsMessage(settings),
-      { parse_mode: 'HTML' },
+      this.getPredictionGroupNotificationSettingsMessageOptions(settings),
     );
   }
 
@@ -303,6 +318,55 @@ export class TelegramController {
     return null;
   }
 
+  private parsePredictionsGroupUpdateNotificationSettingCallback(
+    callbackData?: string,
+  ) {
+    if (!callbackData) return null;
+
+    const match = callbackData.match(
+      /^predictions\/group\/(\d+)\/settings\/notify-match-status-changed\/(true|false)$/,
+    );
+
+    if (!match) return null;
+
+    return {
+      groupId: Number(match[1]),
+      value: match[2] === 'true',
+    };
+  }
+
+  private async updateUserPredictionsGroupNotifyMatchStatusChanged(
+    chatId: string | number,
+    telegramUserId: number,
+    groupId: number,
+    value: boolean,
+  ) {
+    const telegramAccount =
+      await this.usersService.findUserByTelegramUserId(telegramUserId);
+
+    if (!telegramAccount) {
+      await this.telegramService.sendMessage(
+        chatId,
+        'Unverified user. Please link your account first.',
+      );
+      return;
+    }
+
+    const settings =
+      await this.tournamentsService.updateGroupMemberNotificationSetting(
+        groupId,
+        telegramAccount.user.id,
+        'notifyMatchStatusChanged',
+        value,
+      );
+
+    await this.telegramService.sendMessage(
+      chatId,
+      this.formatPredictionGroupNotificationSettingsMessage(settings),
+      this.getPredictionGroupNotificationSettingsMessageOptions(settings),
+    );
+  }
+
   private formatPredictionGroupNotificationSettingsMessage(
     settings: GroupMemberNotificationSettingsData,
   ) {
@@ -315,6 +379,27 @@ export class TelegramController {
       `<b>Match score changed:</b> <code>${this.formatNotificationSettingStatus(notificationSettings.notifyMatchScoreChanged)}</code>`,
       `<b>Prediction changed:</b> <code>${this.formatNotificationSettingStatus(notificationSettings.notifyPredictionChanged)}</code>`,
     ].join('\n');
+  }
+
+  private getPredictionGroupNotificationSettingsMessageOptions(
+    settings: GroupMemberNotificationSettingsData,
+  ) {
+    const nextNotifyMatchStatusChangedValue =
+      !settings.notificationSettings.notifyMatchStatusChanged;
+
+    return {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: `${nextNotifyMatchStatusChangedValue ? 'Enable' : 'Disable'} match status notifications`,
+              callback_data: `predictions/group/${settings.groupId}/settings/notify-match-status-changed/${nextNotifyMatchStatusChangedValue}`,
+            },
+          ],
+        ],
+      },
+    };
   }
 
   private formatNotificationSettingStatus(value: boolean) {

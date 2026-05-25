@@ -598,6 +598,57 @@ export class TournamentsController {
     }
   }
 
+  @Patch('groups/:groupId/notification-settings')
+  async updateNotifyMatchStatusChanged(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+    @Body()
+    body: {
+      notifyMatchStatusChanged?: boolean;
+      notify_match_status_changed?: boolean;
+    },
+  ) {
+    try {
+      console.log(
+        'try to update notify match status changed setting (controller)',
+      );
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const value =
+        body?.notifyMatchStatusChanged ?? body?.notify_match_status_changed;
+
+      if (typeof value !== 'boolean') {
+        throw new BadRequestException({
+          message: 'notifyMatchStatusChanged must be boolean',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      return await this.tournamentsService.updateGroupMemberNotificationSetting(
+        Number(groupId),
+        user.id,
+        'notifyMatchStatusChanged',
+        value,
+      );
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Post('groups/:groupId/predictions')
   async upsertPrediction(
     @Req() req: Request,

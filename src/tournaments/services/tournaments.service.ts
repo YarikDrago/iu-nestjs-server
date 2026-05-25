@@ -58,6 +58,11 @@ export type GroupMemberNotificationSettingsData = {
   updatedAt: Date;
 };
 
+export type GroupMemberNotificationSettingKey =
+  | 'notifyMatchStatusChanged'
+  | 'notifyMatchScoreChanged'
+  | 'notifyPredictionReminder';
+
 @Injectable()
 export class TournamentsService {
   constructor(
@@ -562,6 +567,38 @@ export class TournamentsService {
       },
       updatedAt: settings.updatedAt,
     };
+  }
+
+  async updateGroupMemberNotificationSetting(
+    groupId: number,
+    userId: number,
+    settingKey: GroupMemberNotificationSettingKey,
+    value: boolean,
+  ): Promise<GroupMemberNotificationSettingsData> {
+    console.log('try to update group member notification setting (service)');
+
+    if (typeof value !== 'boolean') {
+      throw new BadRequestException(
+        'Notification setting value must be boolean',
+      );
+    }
+
+    await this.getGroupMemberNotificationSettings(groupId, userId);
+
+    const groupMember = await this.groupMembersRepo.findOne({
+      where: { group_id: groupId, user_id: userId },
+    });
+
+    if (!groupMember) {
+      throw new NotFoundException('Group member not found');
+    }
+
+    await this.groupMemberNotificationSettingsRepo.update(
+      { groupMemberId: groupMember.id },
+      { [settingKey]: value },
+    );
+
+    return await this.getGroupMemberNotificationSettings(groupId, userId);
   }
 
   async addUserAsGroupMember(
