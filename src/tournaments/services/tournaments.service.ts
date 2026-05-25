@@ -210,6 +210,8 @@ export class TournamentsService {
       const dbMatch = dbMatchesByExternalId.get(Number(match.id));
       const { homeScore, awayScore } = this.calculateMatchScore(match);
       const statusApi = match.status || '';
+      const homeTeamApi = match.homeTeam.name || '';
+      const awayTeamApi = match.awayTeam.name || '';
       const startTimeApi = new Date(match.utcDate);
 
       /* If the match is not in the database, it means that it has been "changed"/new */
@@ -220,6 +222,8 @@ export class TournamentsService {
 
       /* Compare with the existing match in the database */
       const isStatusChanged = (dbMatch.status || '') !== statusApi;
+      const isHomeTeamChanged = (dbMatch.home_team || '') !== homeTeamApi;
+      const isAwayTeamChanged = (dbMatch.away_team || '') !== awayTeamApi;
       const isHomeScoreChanged = (dbMatch.home_score ?? null) !== homeScore;
       const isAwayScoreChanged = (dbMatch.away_score ?? null) !== awayScore;
 
@@ -232,6 +236,8 @@ export class TournamentsService {
       /* Skip if nothing has changed */
       if (
         !isStatusChanged &&
+        !isHomeTeamChanged &&
+        !isAwayTeamChanged &&
         !isHomeScoreChanged &&
         !isAwayScoreChanged &&
         !isStartTimeChanged
