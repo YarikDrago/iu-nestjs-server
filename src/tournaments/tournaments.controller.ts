@@ -566,6 +566,38 @@ export class TournamentsController {
     }
   }
 
+  @Get('groups/:groupId/notification-settings')
+  async getGroupMemberNotificationSettings(
+    @Req() req: Request,
+    @Param('groupId') groupId: number,
+  ) {
+    try {
+      console.log('try to get group member notification settings (controller)');
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      return await this.tournamentsService.getGroupMemberNotificationSettings(
+        Number(groupId),
+        user.id,
+      );
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Post('groups/:groupId/predictions')
   async upsertPrediction(
     @Req() req: Request,

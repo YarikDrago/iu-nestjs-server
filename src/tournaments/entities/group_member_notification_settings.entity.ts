@@ -43,11 +43,11 @@ export class GroupMemberNotificationSettings {
   notifyMatchScoreChanged: boolean;
 
   @Column({
-    name: 'notify_prediction_changed',
+    name: 'notify_prediction_reminder',
     type: 'boolean',
     default: false,
   })
-  notifyPredictionChanged: boolean;
+  notifyPredictionReminder: boolean;
 
   @UpdateDateColumn({
     name: 'updated_at',

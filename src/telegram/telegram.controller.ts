@@ -3,7 +3,10 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import type { TelegramUpdate } from './telegram.types';
 import { UsersService } from '../users/users.service';
-import { TournamentsService } from '../tournaments/services/tournaments.service';
+import {
+  GroupMemberNotificationSettingsData,
+  TournamentsService,
+} from '../tournaments/services/tournaments.service';
 import { Group } from '../tournaments/entities/group.entity';
 
 @Controller('telegram')
@@ -141,17 +144,32 @@ export class TelegramController {
   private async handleCallbackQuery(
     callbackQuery: NonNullable<TelegramUpdate['callback_query']>,
   ) {
-    if (callbackQuery.data !== 'predictions') {
+    const callbackData = callbackQuery.data;
+
+    if (callbackData === 'predictions') {
       await this.telegramService.answerCallbackQuery(callbackQuery.id);
+      const chatId = callbackQuery.message?.chat.id;
+      if (!chatId) return;
+
+      await this.sendUserPredictionsGroups(chatId, callbackQuery.from.id);
       return;
     }
 
     await this.telegramService.answerCallbackQuery(callbackQuery.id);
 
-    const chatId = callbackQuery.message?.chat.id;
-    if (!chatId) return;
+    const settingsGroupId =
+      this.parsePredictionsGroupSettingsCallback(callbackData);
 
-    await this.sendUserPredictionsGroups(chatId, callbackQuery.from.id);
+    if (settingsGroupId) {
+      const chatId = callbackQuery.message?.chat.id;
+      if (!chatId) return;
+
+      await this.sendUserPredictionsGroupSettings(
+        chatId,
+        callbackQuery.from.id,
+        settingsGroupId,
+      );
+    }
   }
 
   private async sendUserPredictionsGroups(
@@ -233,13 +251,74 @@ export class TelegramController {
               },
               {
                 text: 'settings',
-                callback_data: `predictions_group:${group.id}:settings`,
+                callback_data: `predictions/group/${group.id}/settings`,
               },
             ],
           ],
         },
       },
     };
+  }
+
+  private async sendUserPredictionsGroupSettings(
+    chatId: string | number,
+    telegramUserId: number,
+    groupId: number,
+  ) {
+    const telegramAccount =
+      await this.usersService.findUserByTelegramUserId(telegramUserId);
+
+    if (!telegramAccount) {
+      await this.telegramService.sendMessage(
+        chatId,
+        'Unverified user. Please link your account first.',
+      );
+      return;
+    }
+
+    const settings =
+      await this.tournamentsService.getGroupMemberNotificationSettings(
+        groupId,
+        telegramAccount.user.id,
+      );
+
+    await this.telegramService.sendMessage(
+      chatId,
+      this.formatPredictionGroupNotificationSettingsMessage(settings),
+      { parse_mode: 'HTML' },
+    );
+  }
+
+  private parsePredictionsGroupSettingsCallback(callbackData?: string) {
+    if (!callbackData) return null;
+
+    const match = callbackData.match(/^predictions\/group\/(\d+)\/settings$/);
+    if (match) return Number(match[1]);
+
+    const legacyMatch = callbackData.match(
+      /^predictions_group:(\d+):settings$/,
+    );
+    if (legacyMatch) return Number(legacyMatch[1]);
+
+    return null;
+  }
+
+  private formatPredictionGroupNotificationSettingsMessage(
+    settings: GroupMemberNotificationSettingsData,
+  ) {
+    const notificationSettings = settings.notificationSettings;
+
+    return [
+      `<b>Group ID:</b> <code>${settings.groupId}</code>`,
+      '<b>Notification settings:</b>',
+      `<b>Match status changed:</b> <code>${this.formatNotificationSettingStatus(notificationSettings.notifyMatchStatusChanged)}</code>`,
+      `<b>Match score changed:</b> <code>${this.formatNotificationSettingStatus(notificationSettings.notifyMatchScoreChanged)}</code>`,
+      `<b>Prediction changed:</b> <code>${this.formatNotificationSettingStatus(notificationSettings.notifyPredictionChanged)}</code>`,
+    ].join('\n');
+  }
+
+  private formatNotificationSettingStatus(value: boolean) {
+    return value ? 'enabled' : 'disabled';
   }
 
   private formatDate(date?: Date | string) {

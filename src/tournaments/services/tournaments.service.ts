@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, In, Repository } from 'typeorm';
@@ -42,6 +43,19 @@ export type UpsertGroupInput = {
   tournamentId: number;
   seasonId: number;
   ownerId: number;
+};
+
+export type GroupMemberNotificationSettingsData = {
+  groupMemberId: number;
+  groupId: number;
+  userId: number;
+  memberStatus: string;
+  notificationSettings: {
+    notifyMatchStatusChanged: boolean;
+    notifyMatchScoreChanged: boolean;
+    notifyPredictionChanged: boolean;
+  };
+  updatedAt: Date;
 };
 
 @Injectable()
@@ -504,6 +518,50 @@ export class TournamentsService {
     return await this.groupMembersRepo.findOne({
       where: { group_id: groupId, user_id: userId },
     });
+  }
+
+  async getGroupMemberNotificationSettings(
+    groupId: number,
+    userId: number,
+  ): Promise<GroupMemberNotificationSettingsData> {
+    console.log('try to get group member notification settings (service)');
+
+    const groupMember = await this.groupMembersRepo.findOne({
+      where: { group_id: groupId, user_id: userId },
+    });
+
+    if (!groupMember) {
+      throw new NotFoundException('Group member not found');
+    }
+
+    if (groupMember.status !== 'verified') {
+      throw new UnauthorizedException('User is not verified in this group');
+    }
+
+    let settings = await this.groupMemberNotificationSettingsRepo.findOne({
+      where: { groupMemberId: groupMember.id },
+    });
+
+    if (!settings) {
+      settings = await this.groupMemberNotificationSettingsRepo.save(
+        this.groupMemberNotificationSettingsRepo.create({
+          groupMemberId: groupMember.id,
+        }),
+      );
+    }
+
+    return {
+      groupMemberId: groupMember.id,
+      groupId: groupMember.group_id,
+      userId: groupMember.user_id,
+      memberStatus: groupMember.status,
+      notificationSettings: {
+        notifyMatchStatusChanged: settings.notifyMatchStatusChanged,
+        notifyMatchScoreChanged: settings.notifyMatchScoreChanged,
+        notifyPredictionChanged: settings.notifyPredictionReminder,
+      },
+      updatedAt: settings.updatedAt,
+    };
   }
 
   async addUserAsGroupMember(
