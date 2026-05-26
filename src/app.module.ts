@@ -28,6 +28,7 @@ import { SystemModule } from './system/system.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { UserTelegramAccounts } from './users/entities/user-telegram-accounts.entity';
 import { GroupMemberNotificationSettings } from './tournaments/entities/group_member_notification_settings.entity';
+import { TournamentUserNotificationSettings } from './tournaments/entities/tournament_user_notification_settings.entity';
 
 @Module({
   imports: [
@@ -58,8 +59,10 @@ import { GroupMemberNotificationSettings } from './tournaments/entities/group_me
         Group, // Groups for prediction tournaments
         GroupMembers,
         GroupMemberNotificationSettings,
+        TournamentUserNotificationSettings,
         Predictions,
       ],
+      migrations: [],
       // synchronize: true, // WARNING!
       timezone: 'Z',
       extra: {

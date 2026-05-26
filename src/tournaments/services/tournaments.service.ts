@@ -17,6 +17,7 @@ import { GroupMembers } from '../entities/group_members.entity';
 import { FootballMatchDto } from '../../football/dto/football-match.dto';
 import { UpdatesGateway } from '../../updates/updates.gateway';
 import { GroupMemberNotificationSettings } from '../entities/group_member_notification_settings.entity';
+import { TournamentUserNotificationSettings } from '../entities/tournament_user_notification_settings.entity';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -78,6 +79,8 @@ export class TournamentsService {
     private readonly groupMembersRepo: Repository<GroupMembers>,
     @InjectRepository(GroupMemberNotificationSettings)
     private readonly groupMemberNotificationSettingsRepo: Repository<GroupMemberNotificationSettings>,
+    @InjectRepository(TournamentUserNotificationSettings)
+    private readonly tournamentUserNotificationSettingsRepo: Repository<TournamentUserNotificationSettings>,
 
     private readonly footballService: FootballService,
     private readonly updatesService: UpdatesService,
