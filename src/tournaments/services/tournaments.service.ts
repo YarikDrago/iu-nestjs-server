@@ -123,6 +123,39 @@ export class TournamentsService {
     });
   }
 
+  /* Get the tournament data from the DB */
+  async getTournamentWithMatchesById(tournamentId: number) {
+    const tournament = await this.tournamentsRepo.findOne({
+      where: { id: tournamentId },
+    });
+
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+
+    const activeSeason = await this.seasonsRepo.findOne({
+      where: { tournament_id: tournamentId, is_current: true },
+    });
+
+    if (!activeSeason) {
+      throw new NotFoundException('Active season not found');
+    }
+
+    const matches = await this.matchesRepo.find({
+      where: { tournament_id: tournamentId, season_id: activeSeason.id },
+      order: {
+        start_time: 'ASC',
+        id: 'ASC',
+      },
+    });
+
+    return {
+      ...tournament,
+      season: activeSeason,
+      matches,
+    };
+  }
+
   async addNewTournament(payload: Omit<Tournaments, 'id' | 'seasons'>) {
     console.log('try to add new tournament (service)');
     const tournament = this.tournamentsRepo.create(payload);

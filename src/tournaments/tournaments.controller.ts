@@ -115,6 +115,41 @@ export class TournamentsController {
     }
   }
 
+  /* Get tournament data from DB (not API) */
+  @Get(':innerId/matches')
+  async getTournamentData(
+    @Req() req: Request,
+    @Param('innerId') innerId: string,
+  ) {
+    try {
+      console.log('try to get tournament data from DB:', innerId);
+      this.authService.checkAccessTokenFromRequest(req);
+      const tournamentId = Number(innerId);
+
+      if (!Number.isInteger(tournamentId) || tournamentId <= 0) {
+        throw new BadRequestException({
+          message: 'Invalid tournament ID',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      return await this.tournamentsService.getTournamentWithMatchesById(
+        tournamentId,
+      );
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Post('add')
   async createTournament(
     @Req() req: Request,
