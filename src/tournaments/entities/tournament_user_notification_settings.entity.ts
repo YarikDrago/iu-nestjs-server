@@ -24,7 +24,7 @@ export class TournamentUserNotificationSettings {
   tournamentId: number;
 
   @ManyToOne(() => Tournaments, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tournament_id' })
+  @JoinColumn({ name: 'tournament_id', referencedColumnName: 'external_id' })
   tournament: Tournaments;
 
   @Column({ name: 'user_id', type: 'bigint' })
