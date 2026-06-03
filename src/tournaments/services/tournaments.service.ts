@@ -64,6 +64,16 @@ export type GroupMemberNotificationSettingKey =
   | 'notifyMatchScoreChanged'
   | 'notifyPredictionReminder';
 
+export type TournamentUserNotificationSettingsData = {
+  tournamentId: number;
+  userId: number;
+  notificationSettings: {
+    notifyMatchStatusChanged: boolean;
+    notifyMatchScoreChanged: boolean;
+  };
+  updatedAt: Date;
+};
+
 @Injectable()
 export class TournamentsService {
   constructor(
@@ -635,6 +645,46 @@ export class TournamentsService {
     );
 
     return await this.getGroupMemberNotificationSettings(groupId, userId);
+  }
+
+  async getTournamentUserNotificationSettings(
+    tournamentId: number,
+    userId: number,
+  ): Promise<TournamentUserNotificationSettingsData> {
+    console.log('try to get tournament user notification settings (service)');
+
+    const tournament = await this.tournamentsRepo.findOne({
+      where: [{ id: tournamentId }, { external_id: tournamentId }],
+    });
+
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+
+    const tournamentExternalId = tournament.external_id;
+
+    let settings = await this.tournamentUserNotificationSettingsRepo.findOne({
+      where: { tournamentId: tournamentExternalId, userId },
+    });
+
+    if (!settings) {
+      settings = await this.tournamentUserNotificationSettingsRepo.save(
+        this.tournamentUserNotificationSettingsRepo.create({
+          tournamentId: tournamentExternalId,
+          userId,
+        }),
+      );
+    }
+
+    return {
+      tournamentId: settings.tournamentId,
+      userId: settings.userId,
+      notificationSettings: {
+        notifyMatchStatusChanged: settings.notifyMatchStatusChanged,
+        notifyMatchScoreChanged: settings.notifyMatchScoreChanged,
+      },
+      updatedAt: settings.updatedAt,
+    };
   }
 
   async addUserAsGroupMember(

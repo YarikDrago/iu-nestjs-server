@@ -21,6 +21,7 @@ import { UsersService } from '../users/users.service';
 import { FootballCompetitionMatchesDto } from '../football/dto/football-competition-matches.dto';
 import { MailService } from '../mail/mail.service';
 import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
+import { UpdateTournamentUserNotificationSettingsDto } from './dto/update-tournament-user-notification-settings.dto';
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -617,6 +618,49 @@ export class TournamentsController {
 
       return await this.tournamentsService.getGroupMemberNotificationSettings(
         Number(groupId),
+        user.id,
+      );
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get(':tournamentId/notification-settings')
+  async getTournamentUserNotificationSettings(
+    @Req() req: Request,
+    @Param('tournamentId') tournamentId: string,
+  ) {
+    try {
+      console.log(
+        'try to get tournament user notification settings (controller)',
+      );
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const parsedTournamentId = Number(tournamentId);
+
+      if (!Number.isInteger(parsedTournamentId) || parsedTournamentId <= 0) {
+        throw new BadRequestException({
+          message: 'Invalid tournament ID',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      return await this.tournamentsService.getTournamentUserNotificationSettings(
+        parsedTournamentId,
         user.id,
       );
     } catch (e) {
