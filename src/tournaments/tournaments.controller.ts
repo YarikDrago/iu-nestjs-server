@@ -677,6 +677,62 @@ export class TournamentsController {
     }
   }
 
+  @Patch(':tournamentId/notification-settings')
+  async updateTournamentUserNotificationSettings(
+    @Req() req: Request,
+    @Param('tournamentId') tournamentId: string,
+    @Body() body: UpdateTournamentUserNotificationSettingsDto,
+  ) {
+    try {
+      console.log(
+        'try to update tournament user notification settings (controller)',
+      );
+      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+      const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const parsedTournamentId = Number(tournamentId);
+
+      if (!Number.isInteger(parsedTournamentId) || parsedTournamentId <= 0) {
+        throw new BadRequestException({
+          message: 'Invalid tournament ID',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      const notifyMatchStatusChanged =
+        body?.notifyMatchStatusChanged ?? body?.notify_match_status_changed;
+      const notifyMatchScoreChanged =
+        body?.notifyMatchScoreChanged ?? body?.notify_match_score_changed;
+
+      const data =
+        await this.tournamentsService.updateTournamentUserNotificationSettings(
+          parsedTournamentId,
+          user.id,
+          {
+            notifyMatchStatusChanged,
+            notifyMatchScoreChanged,
+          },
+        );
+
+      return data;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Patch('groups/:groupId/notification-settings')
   async updateNotifyMatchStatusChanged(
     @Req() req: Request,

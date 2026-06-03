@@ -687,6 +687,82 @@ export class TournamentsService {
     };
   }
 
+  async updateTournamentUserNotificationSettings(
+    tournamentId: number,
+    userId: number,
+    values: Partial<
+      Pick<
+        TournamentUserNotificationSettings,
+        'notifyMatchStatusChanged' | 'notifyMatchScoreChanged'
+      >
+    >,
+  ): Promise<TournamentUserNotificationSettingsData> {
+    console.log(
+      'try to update tournament user notification settings (service)',
+    );
+
+    const allowedKeys: Array<keyof typeof values> = [
+      'notifyMatchStatusChanged',
+      'notifyMatchScoreChanged',
+    ];
+
+    const hasInvalidValue = allowedKeys.some(
+      (key) => values[key] !== undefined && typeof values[key] !== 'boolean',
+    );
+
+    if (hasInvalidValue) {
+      throw new BadRequestException(
+        'Notification setting values must be boolean',
+      );
+    }
+
+    const updateValues = Object.fromEntries(
+      allowedKeys
+        .filter((key) => values[key] !== undefined)
+        .map((key) => [key, values[key]]),
+    );
+
+    if (Object.keys(updateValues).length === 0) {
+      throw new BadRequestException(
+        'At least one notification setting is required',
+      );
+    }
+
+    const tournament = await this.tournamentsRepo.findOne({
+      where: [{ id: tournamentId }, { external_id: tournamentId }],
+    });
+
+    if (!tournament) {
+      throw new NotFoundException('Tournament not found');
+    }
+
+    let settings = await this.tournamentUserNotificationSettingsRepo.findOne({
+      where: { tournamentId: tournament.external_id, userId },
+    });
+
+    if (!settings) {
+      settings = this.tournamentUserNotificationSettingsRepo.create({
+        tournamentId: tournament.external_id,
+        userId,
+      });
+    }
+
+    const updatedSettings =
+      await this.tournamentUserNotificationSettingsRepo.save(
+        Object.assign(settings, updateValues),
+      );
+
+    return {
+      tournamentId: updatedSettings.tournamentId,
+      userId: updatedSettings.userId,
+      notificationSettings: {
+        notifyMatchStatusChanged: updatedSettings.notifyMatchStatusChanged,
+        notifyMatchScoreChanged: updatedSettings.notifyMatchScoreChanged,
+      },
+      updatedAt: updatedSettings.updatedAt,
+    };
+  }
+
   async addUserAsGroupMember(
     groupId: number,
     userId: number,
