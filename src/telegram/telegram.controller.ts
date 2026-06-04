@@ -3,11 +3,12 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import type { TelegramUpdate } from './telegram.types';
 import { UsersService } from '../users/users.service';
+import { TournamentsService } from '../tournaments/services/tournaments.service';
+import { Group } from '../tournaments/entities/group.entity';
 import {
   GroupMemberNotificationSettingsData,
-  TournamentsService,
-} from '../tournaments/services/tournaments.service';
-import { Group } from '../tournaments/entities/group.entity';
+  TournamentNotificationService,
+} from '../tournaments/services/tournament_notification.service';
 
 @Controller('telegram')
 export class TelegramController {
@@ -17,6 +18,7 @@ export class TelegramController {
     private readonly telegramService: TelegramService,
     private readonly usersService: UsersService,
     private readonly tournamentsService: TournamentsService,
+    private readonly tournamentNotificationService: TournamentNotificationService,
   ) {}
 
   @Get('me')
@@ -292,7 +294,7 @@ export class TelegramController {
     }
 
     const settings =
-      await this.tournamentsService.getGroupMemberNotificationSettings(
+      await this.tournamentNotificationService.getGroupMemberNotificationSettings(
         groupId,
         telegramAccount.user.id,
       );
@@ -353,7 +355,7 @@ export class TelegramController {
     }
 
     const settings =
-      await this.tournamentsService.updateGroupMemberNotificationSetting(
+      await this.tournamentNotificationService.updateGroupMemberNotificationSetting(
         groupId,
         telegramAccount.user.id,
         'notifyMatchStatusChanged',

@@ -16,6 +16,7 @@ import { Predictions } from './entities/predictions.entity';
 import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
 import { GroupMemberNotificationSettings } from './entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from './entities/tournament_user_notification_settings.entity';
+import { TournamentNotificationService } from './services/tournament_notification.service';
 
 @Module({
   imports: [
@@ -35,8 +36,12 @@ import { TournamentUserNotificationSettings } from './entities/tournament_user_n
     UpdatesModule,
     MailModule,
   ],
-  providers: [TournamentsService, TournamentsPredictionsService],
-  exports: [TournamentsService],
+  providers: [
+    TournamentsService,
+    TournamentsPredictionsService,
+    TournamentNotificationService,
+  ],
+  exports: [TournamentsService, TournamentNotificationService],
   controllers: [TournamentsController],
 })
 export class TournamentsModule {}

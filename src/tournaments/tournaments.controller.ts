@@ -22,12 +22,14 @@ import { FootballCompetitionMatchesDto } from '../football/dto/football-competit
 import { MailService } from '../mail/mail.service';
 import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
 import { UpdateTournamentUserNotificationSettingsDto } from './dto/update-tournament-user-notification-settings.dto';
+import { TournamentNotificationService } from './services/tournament_notification.service';
 
 @Controller('tournaments')
 export class TournamentsController {
   constructor(
     private readonly tournamentsService: TournamentsService,
     private readonly tournamentsPredictionsService: TournamentsPredictionsService,
+    private readonly tournamentNotificationService: TournamentNotificationService,
     private readonly footballService: FootballService,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
@@ -616,7 +618,7 @@ export class TournamentsController {
         throw new UnauthorizedException('User not found');
       }
 
-      return await this.tournamentsService.getGroupMemberNotificationSettings(
+      return await this.tournamentNotificationService.getGroupMemberNotificationSettings(
         Number(groupId),
         user.id,
       );
@@ -659,7 +661,7 @@ export class TournamentsController {
         });
       }
 
-      return await this.tournamentsService.getTournamentUserNotificationSettings(
+      return await this.tournamentNotificationService.getTournamentUserNotificationSettings(
         parsedTournamentId,
         user.id,
       );
@@ -709,7 +711,7 @@ export class TournamentsController {
         body?.notifyMatchScoreChanged ?? body?.notify_match_score_changed;
 
       const data =
-        await this.tournamentsService.updateTournamentUserNotificationSettings(
+        await this.tournamentNotificationService.updateTournamentUserNotificationSettings(
           parsedTournamentId,
           user.id,
           {
@@ -764,7 +766,7 @@ export class TournamentsController {
         });
       }
 
-      return await this.tournamentsService.updateGroupMemberNotificationSetting(
+      return await this.tournamentNotificationService.updateGroupMemberNotificationSetting(
         Number(groupId),
         user.id,
         'notifyMatchStatusChanged',
