@@ -37,6 +37,12 @@ export type UpsertMatchInput = {
   awayScore: number | null;
 };
 
+export type MatchChangeReason = 'status' | 'score' | 'other';
+
+export type ChangedFootballMatchDto = FootballMatchDto & {
+  changeReason: MatchChangeReason;
+};
+
 export type UpsertGroupInput = {
   name: string;
   tournamentId: number;
@@ -226,8 +232,8 @@ export class TournamentsService {
   findChangedMatches(
     matchesFromApi: FootballMatchDto[],
     matchesFromDb: Matches[],
-  ): FootballMatchDto[] {
-    const changedMatches: FootballMatchDto[] = [];
+  ): ChangedFootballMatchDto[] {
+    const changedMatches: ChangedFootballMatchDto[] = [];
     const dbMatchesByExternalId = new Map<number, Matches>();
     for (const dbMatch of matchesFromDb) {
       dbMatchesByExternalId.set(Number(dbMatch.external_id), dbMatch);
@@ -248,7 +254,7 @@ export class TournamentsService {
 
       /* If the match is not in the database, it means that it has been "changed"/new */
       if (!dbMatch) {
-        changedMatches.push(match);
+        changedMatches.push({ ...match, changeReason: 'other' });
         continue;
       }
 
@@ -277,8 +283,15 @@ export class TournamentsService {
         continue;
       }
 
+      const changeReason: MatchChangeReason =
+        isHomeScoreChanged || isAwayScoreChanged
+          ? 'score'
+          : isStatusChanged
+            ? 'status'
+            : 'other';
+
       /* Add the match to the list of changed matches if any of the following conditions are met */
-      changedMatches.push(match);
+      changedMatches.push({ ...match, changeReason });
     }
 
     return changedMatches;
@@ -424,10 +437,11 @@ export class TournamentsService {
     };
 
     /* Extract matches that have been changed since the last update. */
-    const updatedMatchesApi: FootballMatchDto[] = this.findChangedMatches(
-      matchesFromCompetitionsApi(),
-      competitionsMatchesDataDb,
-    );
+    const updatedMatchesApi: ChangedFootballMatchDto[] =
+      this.findChangedMatches(
+        matchesFromCompetitionsApi(),
+        competitionsMatchesDataDb,
+      );
 
     const transformApiMatchesToDbMatches = (
       matches: FootballMatchDto[],
