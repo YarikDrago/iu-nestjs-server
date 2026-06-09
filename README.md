@@ -3,4 +3,4 @@
 2) ``git pull``
 3) ``npm install``
 4) ``npm build``
-5) With PM2 ``pm2 start dist/main.js --name my-app``
+5) With PM2 ``pm2 start npm -- name my-app -- run start:prod``
