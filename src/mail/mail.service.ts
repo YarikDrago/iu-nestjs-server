@@ -101,6 +101,9 @@ export class MailService {
     const recipient =
       process.env.NODE_ENV === 'development' ? process.env.SMTP_TEST_EMAIL : to;
 
+    console.log('mode:', process.env.NODE_ENV);
+    console.log('recipient: ', recipient);
+
     const userText = `User: ${userNicknameToJoin}`;
     const groupNameText = `Group: ${groupName}`;
 
