@@ -41,7 +41,11 @@ import { TournamentNotificationService } from './services/tournament_notificatio
     TournamentsPredictionsService,
     TournamentNotificationService,
   ],
-  exports: [TournamentsService, TournamentNotificationService],
+  exports: [
+    TournamentsService,
+    TournamentsPredictionsService,
+    TournamentNotificationService,
+  ],
   controllers: [TournamentsController],
 })
 export class TournamentsModule {}

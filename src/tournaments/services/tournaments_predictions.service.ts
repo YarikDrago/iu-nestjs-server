@@ -70,6 +70,7 @@ export class TournamentsPredictionsService {
         match_id: matchId,
         home_score: homeScore,
         away_score: awayScore,
+        points: 0,
       },
       ['user_id', 'group_id', 'match_id'],
     );

@@ -9,15 +9,28 @@ import {
   GroupMemberNotificationSettingsData,
   TournamentNotificationService,
 } from '../tournaments/services/tournament_notification.service';
+import { TournamentsPredictionsService } from '../tournaments/services/tournaments_predictions.service';
+import { Matches } from '../tournaments/entities/matches.entity';
+import { Predictions } from '../tournaments/entities/predictions.entity';
+
+type PendingPredictionInput = {
+  groupId: number;
+  matchId: number;
+};
 
 @Controller('telegram')
 export class TelegramController {
   private lastUpdateId: number | null = null;
+  private readonly pendingPredictionInputs = new Map<
+    string,
+    PendingPredictionInput
+  >();
 
   constructor(
     private readonly telegramService: TelegramService,
     private readonly usersService: UsersService,
     private readonly tournamentsService: TournamentsService,
+    private readonly tournamentsPredictionsService: TournamentsPredictionsService,
     private readonly tournamentNotificationService: TournamentNotificationService,
   ) {}
 
@@ -138,6 +151,10 @@ export class TelegramController {
           `Test message response: ${now}`,
         );
       }
+
+      if (!text.trim().startsWith('/')) {
+        await this.handlePendingPredictionInput(chatId, fromUserId, text);
+      }
     }
 
     return { ok: true };
@@ -158,6 +175,37 @@ export class TelegramController {
     }
 
     await this.telegramService.answerCallbackQuery(callbackQuery.id);
+
+    const predictionsGroupId =
+      this.parsePredictionsGroupMatchesCallback(callbackData);
+
+    if (predictionsGroupId) {
+      const chatId = callbackQuery.message?.chat.id;
+      if (!chatId) return;
+
+      await this.sendUserPredictionsGroupMatches(
+        chatId,
+        callbackQuery.from.id,
+        predictionsGroupId,
+      );
+      return;
+    }
+
+    const predictionMatchCallback =
+      this.parsePredictionMatchCallback(callbackData);
+
+    if (predictionMatchCallback) {
+      const chatId = callbackQuery.message?.chat.id;
+      if (!chatId) return;
+
+      await this.requestPredictionScoreInput(
+        chatId,
+        callbackQuery.from.id,
+        predictionMatchCallback.groupId,
+        predictionMatchCallback.matchId,
+      );
+      return;
+    }
 
     const settingsGroupId =
       this.parsePredictionsGroupSettingsCallback(callbackData);
@@ -263,7 +311,7 @@ export class TelegramController {
           inline_keyboard: [
             [
               {
-                text: 'See table',
+                text: 'Make predictions',
                 callback_data: `predictions_group:${group.id}:table`,
               },
               {
@@ -275,6 +323,259 @@ export class TelegramController {
         },
       },
     };
+  }
+
+  private async sendUserPredictionsGroupMatches(
+    chatId: string | number,
+    telegramUserId: number,
+    groupId: number,
+  ) {
+    const telegramAccount =
+      await this.usersService.findUserByTelegramUserId(telegramUserId);
+
+    if (!telegramAccount) {
+      await this.telegramService.sendMessage(
+        chatId,
+        'Unverified user. Please link your account first.',
+      );
+      return;
+    }
+
+    const group = await this.tournamentsService.findGroupById(groupId, true);
+
+    if (!group) {
+      await this.telegramService.sendMessage(
+        chatId,
+        'Prediction group not found.',
+      );
+      return;
+    }
+
+    const membership = await this.tournamentsService.findUserInGroup(
+      groupId,
+      telegramAccount.user.id,
+    );
+
+    if (!membership || membership.status !== 'verified') {
+      await this.telegramService.sendMessage(
+        chatId,
+        'You are not a verified member of this prediction group.',
+      );
+      return;
+    }
+
+    const matches = await this.tournamentsService.getCompetitionMatches(
+      group.tournament_id,
+      group.season_id,
+    );
+
+    const nextMatches = this.getNextPredictionMatches(matches, 5);
+
+    if (nextMatches.length === 0) {
+      await this.telegramService.sendMessage(
+        chatId,
+        'No upcoming matches available for predictions in this group.',
+      );
+      return;
+    }
+
+    const predictions =
+      await this.tournamentsPredictionsService.getGroupPredictions(groupId);
+    const userPredictionByMatchId = this.getUserPredictionByMatchId(
+      predictions,
+      telegramAccount.user.id,
+    );
+
+    await this.telegramService.sendMessage(
+      chatId,
+      this.formatPredictionMatchesMessage(
+        group,
+        nextMatches,
+        userPredictionByMatchId,
+      ),
+      this.getPredictionMatchesMessageOptions(group.id, nextMatches),
+    );
+  }
+
+  private getNextPredictionMatches(matches: Matches[], limit: number) {
+    const now = Date.now();
+
+    return matches
+      .filter((match) => {
+        if (!match.start_time) return false;
+        return new Date(match.start_time).getTime() > now;
+      })
+      .sort((left, right) => {
+        const leftTime = left.start_time
+          ? new Date(left.start_time).getTime()
+          : Number.MAX_SAFE_INTEGER;
+        const rightTime = right.start_time
+          ? new Date(right.start_time).getTime()
+          : Number.MAX_SAFE_INTEGER;
+
+        return leftTime - rightTime || Number(left.id) - Number(right.id);
+      })
+      .slice(0, limit);
+  }
+
+  private getUserPredictionByMatchId(
+    predictions: Predictions[],
+    userId: number,
+  ) {
+    return new Map(
+      predictions
+        .filter((prediction) => Number(prediction.user_id) === Number(userId))
+        .map((prediction) => [Number(prediction.match_id), prediction]),
+    );
+  }
+
+  private formatPredictionMatchesMessage(
+    group: Group,
+    matches: Matches[],
+    userPredictionByMatchId: Map<number, Predictions>,
+  ) {
+    const lines = [
+      `<b>${this.escapeHtml(group.name)}</b>`,
+      'Next matches for predictions:',
+      '',
+      ...matches.map((match, index) => {
+        const prediction = userPredictionByMatchId.get(Number(match.id));
+
+        return [
+          `${index + 1}. <b>${this.escapeHtml(match.home_team ?? 'TBD')}</b> vs <b>${this.escapeHtml(match.away_team ?? 'TBD')}</b>`,
+          `Date: <code>${this.formatDateTime(match.start_time)}</code>`,
+          `Prediction score: <code>${prediction?.home_score ?? 'null'} - ${prediction?.away_score ?? 'null'}</code>`,
+        ].join('\n');
+      }),
+      '',
+      'Choose a match and then send score as <code>2:1</code>.',
+    ];
+
+    return lines.join('\n');
+  }
+
+  private getPredictionMatchesMessageOptions(
+    groupId: number,
+    matches: Matches[],
+  ) {
+    return {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: matches.map((match, index) => [
+          {
+            text: `${index + 1}. ${this.formatMatchButtonText(match)}`,
+            callback_data: `predictions/group/${groupId}/match/${match.id}`,
+          },
+        ]),
+      },
+    };
+  }
+
+  private formatMatchButtonText(match: Matches) {
+    return `${match.home_team ?? 'TBD'} - ${match.away_team ?? 'TBD'}`.slice(
+      0,
+      54,
+    );
+  }
+
+  private async requestPredictionScoreInput(
+    chatId: string | number,
+    telegramUserId: number,
+    groupId: number,
+    matchId: number,
+  ) {
+    this.pendingPredictionInputs.set(
+      this.getPendingPredictionInputKey(chatId, telegramUserId),
+      {
+        groupId,
+        matchId,
+      },
+    );
+
+    await this.telegramService.sendMessage(
+      chatId,
+      'Send your prediction score in format <code>2:1</code>.',
+      { parse_mode: 'HTML' },
+    );
+  }
+
+  private async handlePendingPredictionInput(
+    chatId: string | number,
+    telegramUserId: number | undefined,
+    text: string,
+  ) {
+    if (typeof telegramUserId !== 'number') return false;
+
+    const pendingInput = this.pendingPredictionInputs.get(
+      this.getPendingPredictionInputKey(chatId, telegramUserId),
+    );
+
+    if (!pendingInput) return false;
+
+    const score = this.parsePredictionScore(text);
+
+    if (!score) {
+      await this.telegramService.sendMessage(
+        chatId,
+        'Invalid score format. Send score as <code>2:1</code>.',
+        { parse_mode: 'HTML' },
+      );
+      return true;
+    }
+
+    const telegramAccount =
+      await this.usersService.findUserByTelegramUserId(telegramUserId);
+
+    if (!telegramAccount) {
+      await this.telegramService.sendMessage(
+        chatId,
+        'Unverified user. Please link your account first.',
+      );
+      return true;
+    }
+
+    try {
+      await this.tournamentsPredictionsService.upsertPrediction(
+        telegramAccount.user.id,
+        pendingInput.groupId,
+        pendingInput.matchId,
+        score.homeScore,
+        score.awayScore,
+      );
+
+      this.pendingPredictionInputs.delete(
+        this.getPendingPredictionInputKey(chatId, telegramUserId),
+      );
+
+      await this.telegramService.sendMessage(
+        chatId,
+        `Prediction saved: ${score.homeScore}:${score.awayScore}`,
+      );
+    } catch (error) {
+      await this.telegramService.sendMessage(
+        chatId,
+        `Could not save prediction: ${(error as Error).message}`,
+      );
+    }
+
+    return true;
+  }
+
+  private parsePredictionScore(text: string) {
+    const match = text.trim().match(/^(\d{1,2})\s*[:-]\s*(\d{1,2})$/);
+    if (!match) return null;
+
+    return {
+      homeScore: Number(match[1]),
+      awayScore: Number(match[2]),
+    };
+  }
+
+  private getPendingPredictionInputKey(
+    chatId: string | number,
+    telegramUserId: number,
+  ) {
+    return `${chatId}:${telegramUserId}`;
   }
 
   private async sendUserPredictionsGroupSettings(
@@ -318,6 +619,30 @@ export class TelegramController {
     if (legacyMatch) return Number(legacyMatch[1]);
 
     return null;
+  }
+
+  private parsePredictionsGroupMatchesCallback(callbackData?: string) {
+    if (!callbackData) return null;
+
+    const match = callbackData.match(/^predictions_group:(\d+):table$/);
+    if (match) return Number(match[1]);
+
+    return null;
+  }
+
+  private parsePredictionMatchCallback(callbackData?: string) {
+    if (!callbackData) return null;
+
+    const match = callbackData.match(
+      /^predictions\/group\/(\d+)\/match\/(\d+)$/,
+    );
+
+    if (!match) return null;
+
+    return {
+      groupId: Number(match[1]),
+      matchId: Number(match[2]),
+    };
   }
 
   private parsePredictionsGroupUpdateNotificationSettingCallback(
@@ -412,5 +737,19 @@ export class TelegramController {
     if (!date) return 'Unknown';
 
     return new Date(date).toISOString().slice(0, 10);
+  }
+
+  private formatDateTime(date?: Date | string | null) {
+    if (!date) return 'Unknown';
+
+    return new Date(date).toISOString().slice(0, 16).replace('T', ' ');
+  }
+
+  private escapeHtml(value: string) {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 }
