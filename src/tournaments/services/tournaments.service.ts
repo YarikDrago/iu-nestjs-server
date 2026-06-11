@@ -41,6 +41,11 @@ export type MatchChangeReason = 'status' | 'score' | 'other';
 
 export type ChangedFootballMatchDto = FootballMatchDto & {
   changeReason: MatchChangeReason;
+  /* For comparison API score with DB score
+   * An API score not always correct. It can send, sometimes, null
+   * In this situation we decide that a score can only increase */
+  apiHomeScore: number | null;
+  apiAwayScore: number | null;
   /* Calculated score for DB (not API) */
   homeScore: number | null;
   /* Calculated score for DB (not API) */
@@ -250,7 +255,8 @@ export class TournamentsService {
       // }
 
       const dbMatch = dbMatchesByExternalId.get(Number(match.id));
-      const { homeScore, awayScore } = this.calculateMatchScore(match);
+      const { homeScore: apiHomeScore, awayScore: apiAwayScore } =
+        this.calculateMatchScore(match);
       const statusApi = match.status || '';
       const homeTeamApi = match.homeTeam.name || '';
       const awayTeamApi = match.awayTeam.name || '';
@@ -261,8 +267,10 @@ export class TournamentsService {
         const changedMatch: ChangedFootballMatchDto = {
           ...match,
           changeReason: 'other',
-          homeScore,
-          awayScore,
+          apiHomeScore,
+          apiAwayScore,
+          homeScore: apiHomeScore,
+          awayScore: apiAwayScore,
         };
         changedMatches.push(changedMatch);
         this.logChangedMatch(changedMatch);
@@ -270,6 +278,8 @@ export class TournamentsService {
       }
 
       /* Compare with the existing match in the database */
+      const homeScore = this.getMaxScoreValue(apiHomeScore, dbMatch.home_score);
+      const awayScore = this.getMaxScoreValue(apiAwayScore, dbMatch.away_score);
       const isStatusChanged = (dbMatch.status || '') !== statusApi;
       const isHomeTeamChanged = (dbMatch.home_team || '') !== homeTeamApi;
       const isAwayTeamChanged = (dbMatch.away_team || '') !== awayTeamApi;
@@ -305,6 +315,8 @@ export class TournamentsService {
       const changedMatch: ChangedFootballMatchDto = {
         ...match,
         changeReason,
+        apiHomeScore,
+        apiAwayScore,
         homeScore,
         awayScore,
       };
@@ -734,7 +746,11 @@ export class TournamentsService {
           home: dbMatch?.home_score ?? null,
           away: dbMatch?.away_score ?? null,
         },
-        api: {
+        apiCalculated: {
+          home: match.apiHomeScore,
+          away: match.apiAwayScore,
+        },
+        resolvedForDb: {
           home: match.homeScore,
           away: match.awayScore,
         },
@@ -763,7 +779,11 @@ export class TournamentsService {
           awayTeam: match.awayTeam.name || '',
           startTime: new Date(match.utcDate),
           status: match.status || '',
-          score: {
+          scoreCalculated: {
+            home: match.apiHomeScore,
+            away: match.apiAwayScore,
+          },
+          scoreResolvedForDb: {
             home: match.homeScore,
             away: match.awayScore,
           },
@@ -772,5 +792,20 @@ export class TournamentsService {
     }
 
     console.log('changed match:', logData);
+  }
+
+  private getMaxScoreValue(
+    apiScore: number | null,
+    dbScore: number | null,
+  ): number | null {
+    if (apiScore === null) {
+      return dbScore;
+    }
+
+    if (dbScore === null) {
+      return apiScore;
+    }
+
+    return Math.max(apiScore, dbScore);
   }
 }
