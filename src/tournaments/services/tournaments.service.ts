@@ -41,6 +41,10 @@ export type MatchChangeReason = 'status' | 'score' | 'other';
 
 export type ChangedFootballMatchDto = FootballMatchDto & {
   changeReason: MatchChangeReason;
+  /* Calculated score for DB (not API) */
+  homeScore: number | null;
+  /* Calculated score for DB (not API) */
+  awayScore: number | null;
 };
 
 export type UpsertGroupInput = {
@@ -254,7 +258,14 @@ export class TournamentsService {
 
       /* If the match is not in the database, it means that it has been "changed"/new */
       if (!dbMatch) {
-        changedMatches.push({ ...match, changeReason: 'other' });
+        const changedMatch: ChangedFootballMatchDto = {
+          ...match,
+          changeReason: 'other',
+          homeScore,
+          awayScore,
+        };
+        changedMatches.push(changedMatch);
+        this.logChangedMatch(changedMatch);
         continue;
       }
 
@@ -291,7 +302,15 @@ export class TournamentsService {
             : 'other';
 
       /* Add the match to the list of changed matches if any of the following conditions are met */
-      changedMatches.push({ ...match, changeReason });
+      const changedMatch: ChangedFootballMatchDto = {
+        ...match,
+        changeReason,
+        homeScore,
+        awayScore,
+      };
+
+      changedMatches.push(changedMatch);
+      this.logChangedMatch(changedMatch, dbMatch);
     }
 
     return changedMatches;
@@ -444,12 +463,11 @@ export class TournamentsService {
       );
 
     const transformApiMatchesToDbMatches = (
-      matches: FootballMatchDto[],
+      matches: ChangedFootballMatchDto[],
     ): UpsertMatchInput[] => {
       return matches.map((match) => {
         const statusApi = match.status || '';
         const startTimeApi = new Date(match.utcDate);
-        const { homeScore, awayScore } = this.calculateMatchScore(match);
 
         return {
           externalId: Number(match.id),
@@ -459,8 +477,8 @@ export class TournamentsService {
           awayTeam: match.awayTeam.name || '',
           startTime: startTimeApi,
           status: statusApi,
-          homeScore: homeScore,
-          awayScore: awayScore,
+          homeScore: match.homeScore,
+          awayScore: match.awayScore,
         };
       });
     };
@@ -701,5 +719,58 @@ export class TournamentsService {
       home: generateNewScore(),
       away: generateNewScore(),
     };
+  }
+
+  private logChangedMatch(match: ChangedFootballMatchDto, dbMatch?: Matches) {
+    const logData: Record<string, unknown> = {
+      match: `${match.homeTeam.name || ''} - ${match.awayTeam.name || ''}`,
+      externalId: match.id,
+      reason: match.changeReason,
+    };
+
+    if (match.changeReason === 'score') {
+      logData.score = {
+        db: {
+          home: dbMatch?.home_score ?? null,
+          away: dbMatch?.away_score ?? null,
+        },
+        api: {
+          home: match.homeScore,
+          away: match.awayScore,
+        },
+      };
+    } else if (match.changeReason === 'status') {
+      logData.status = {
+        db: dbMatch?.status ?? null,
+        api: match.status || '',
+      };
+    } else {
+      logData.fields = {
+        db: dbMatch
+          ? {
+              homeTeam: dbMatch.home_team || '',
+              awayTeam: dbMatch.away_team || '',
+              startTime: dbMatch.start_time,
+              status: dbMatch.status || '',
+              score: {
+                home: dbMatch.home_score ?? null,
+                away: dbMatch.away_score ?? null,
+              },
+            }
+          : null,
+        api: {
+          homeTeam: match.homeTeam.name || '',
+          awayTeam: match.awayTeam.name || '',
+          startTime: new Date(match.utcDate),
+          status: match.status || '',
+          score: {
+            home: match.homeScore,
+            away: match.awayScore,
+          },
+        },
+      };
+    }
+
+    console.log('changed match:', logData);
   }
 }
