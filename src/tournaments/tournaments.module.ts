@@ -17,6 +17,7 @@ import { TournamentsPredictionsService } from './services/tournaments_prediction
 import { GroupMemberNotificationSettings } from './entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from './entities/tournament_user_notification_settings.entity';
 import { TournamentNotificationService } from './services/tournament_notification.service';
+import { GroupMemberRoleNames } from './entities/group_member_role_names.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TournamentNotificationService } from './services/tournament_notificatio
       Matches,
       Group,
       GroupMembers,
+      GroupMemberRoleNames,
       GroupMemberNotificationSettings,
       TournamentUserNotificationSettings,
       Predictions,
