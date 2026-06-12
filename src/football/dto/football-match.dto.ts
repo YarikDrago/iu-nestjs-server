@@ -2,6 +2,7 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
+  IsEnum,
   IsString,
   ValidateIf,
   ValidateNested,
@@ -11,6 +12,7 @@ import { FootballAreaDto } from './football-area.dto';
 import { FootballSeasonDto } from './football-season.dto';
 import { FootballTeamDto } from './football-team.dto';
 import { FootballCompetitionMatchDto } from './football-competition-match.dto';
+import { MatchStatus } from '../../tournaments/entities/matches.entity';
 
 class FootballMatchTimeScoreDto {
   @ValidateIf((_, value) => value !== null)
@@ -70,8 +72,8 @@ export class FootballMatchDto {
   @IsString()
   utcDate!: string;
 
-  @IsString()
-  status!: string;
+  @IsEnum(MatchStatus)
+  status!: MatchStatus;
 
   @IsString()
   @IsNotEmpty()

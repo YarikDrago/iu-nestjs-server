@@ -8,7 +8,7 @@ import { FindManyOptions, In, Repository } from 'typeorm';
 import { Tournaments } from '../entities/tournament.entity';
 import { FootballService } from '../../football/football.service';
 import { Seasons } from '../entities/seasons.entity';
-import { Matches } from '../entities/matches.entity';
+import { Matches, MatchStatus } from '../entities/matches.entity';
 import { UpdatesService } from '../../updates/updates.service';
 import { Group } from '../entities/group.entity';
 import { randomBytes } from 'node:crypto';
@@ -32,7 +32,7 @@ export type UpsertMatchInput = {
   homeTeam: string; // name of the team
   awayTeam: string; // name of the team
   startTime: Date | null;
-  status: string;
+  status: MatchStatus | null;
   homeScore: number | null;
   awayScore: number | null;
 };
@@ -257,7 +257,7 @@ export class TournamentsService {
       const dbMatch = dbMatchesByExternalId.get(Number(match.id));
       const { homeScore: apiHomeScore, awayScore: apiAwayScore } =
         this.calculateMatchScore(match);
-      const statusApi = match.status || '';
+      const statusApi = this.parseMatchStatus(match.status);
       const homeTeamApi = match.homeTeam.name || '';
       const awayTeamApi = match.awayTeam.name || '';
       const startTimeApi = new Date(match.utcDate);
@@ -280,7 +280,7 @@ export class TournamentsService {
       /* Compare with the existing match in the database */
       const homeScore = this.getMaxScoreValue(apiHomeScore, dbMatch.home_score);
       const awayScore = this.getMaxScoreValue(apiAwayScore, dbMatch.away_score);
-      const isStatusChanged = (dbMatch.status || '') !== statusApi;
+      const isStatusChanged = (dbMatch.status ?? null) !== statusApi;
       const isHomeTeamChanged = (dbMatch.home_team || '') !== homeTeamApi;
       const isAwayTeamChanged = (dbMatch.away_team || '') !== awayTeamApi;
       const isHomeScoreChanged = (dbMatch.home_score ?? null) !== homeScore;
@@ -478,7 +478,7 @@ export class TournamentsService {
       matches: ChangedFootballMatchDto[],
     ): UpsertMatchInput[] => {
       return matches.map((match) => {
-        const statusApi = match.status || '';
+        const statusApi = this.parseMatchStatus(match.status);
         const startTimeApi = new Date(match.utcDate);
 
         return {
@@ -807,5 +807,19 @@ export class TournamentsService {
     }
 
     return Math.max(apiScore, dbScore);
+  }
+
+  private parseMatchStatus(
+    status: string | null | undefined,
+  ): MatchStatus | null {
+    if (!status) {
+      return null;
+    }
+
+    if (Object.values(MatchStatus).includes(status as MatchStatus)) {
+      return status as MatchStatus;
+    }
+
+    throw new BadRequestException(`Unknown match status: ${status}`);
   }
 }

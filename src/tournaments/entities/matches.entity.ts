@@ -9,6 +9,15 @@ import {
 import { Seasons } from './seasons.entity';
 import { Tournaments } from './tournament.entity';
 
+export enum MatchStatus {
+  SCHEDULED = 'SCHEDULED',
+  POSTPONED = 'POSTPONED',
+  SUSPENDED = 'SUSPENDED',
+  TIMED = 'TIMED',
+  IN_PLAY = 'IN_PLAY',
+  FINISHED = 'FINISHED',
+}
+
 @Entity({ name: 'matches' })
 export class Matches {
   @PrimaryGeneratedColumn({ type: 'bigint' })
@@ -41,8 +50,8 @@ export class Matches {
   @Column({ type: 'timestamp', nullable: true })
   start_time: Date | null;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  status: string; // 'SCHEDULED', 'POSTPONED', 'SUSPENDED', 'TIMED', 'IN_PLAY', 'FINISHED',
+  @Column({ type: 'enum', enum: MatchStatus, nullable: true })
+  status: MatchStatus | null;
 
   @Column({ type: 'int', nullable: true })
   home_score: number | null;
