@@ -21,6 +21,7 @@ import { GroupMemberNotificationSettings } from './tournaments/entities/group_me
 import { TournamentUserNotificationSettings } from './tournaments/entities/tournament_user_notification_settings.entity';
 import { Predictions } from './tournaments/entities/predictions.entity';
 import { CreateGroupMemberRoleNames1781049600000 } from './migrations/1781049600000-CreateGroupMemberRoleNames';
+import { AlterMatchesStatusToEnum1781136000000 } from './migrations/1781136000000-AlterMatchesStatusToEnum';
 
 export default new DataSource({
   type: 'mysql',
@@ -48,7 +49,10 @@ export default new DataSource({
     TournamentUserNotificationSettings,
     Predictions,
   ],
-  migrations: [CreateGroupMemberRoleNames1781049600000],
+  migrations: [
+    CreateGroupMemberRoleNames1781049600000,
+    AlterMatchesStatusToEnum1781136000000,
+  ],
   timezone: 'Z',
   extra: {
     initSql: "SET time_zone = '+00:00'",
