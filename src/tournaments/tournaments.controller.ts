@@ -23,6 +23,7 @@ import { MailService } from '../mail/mail.service';
 import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
 import { UpdateTournamentUserNotificationSettingsDto } from './dto/update-tournament-user-notification-settings.dto';
 import { TournamentNotificationService } from './services/tournament_notification.service';
+import { ManualUpdateMatchDto } from './dto/manual-update-match.dto';
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -268,6 +269,43 @@ export class TournamentsController {
 
       await this.tournamentsService.updateMatchesOfCompetitions();
       return true;
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch('matches/:matchId')
+  async manuallyUpdateMatch(
+    @Req() req: Request,
+    @Param('matchId') matchId: string,
+    @Body() body: ManualUpdateMatchDto,
+  ) {
+    try {
+      console.log('try to manually update match', matchId);
+      this.authService.checkAccessTokenFromRequest(req);
+      await this.authService.checkUserRolesByRequest(req, ['admin']);
+
+      const parsedMatchId = Number(matchId);
+      if (!Number.isInteger(parsedMatchId) || parsedMatchId <= 0) {
+        throw new BadRequestException({
+          message: 'Invalid match ID',
+          code: 'BAD_REQUEST',
+        });
+      }
+
+      return await this.tournamentsService.manuallyUpdateMatch(
+        parsedMatchId,
+        body,
+      );
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
 

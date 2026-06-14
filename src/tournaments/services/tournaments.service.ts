@@ -16,6 +16,7 @@ import { GroupMembers } from '../entities/group_members.entity';
 import { FootballMatchDto } from '../../football/dto/football-match.dto';
 import { UpdatesGateway } from '../../updates/updates.gateway';
 import { TournamentNotificationService } from './tournament_notification.service';
+import { ManualUpdateMatchDto } from '../dto/manual-update-match.dto';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -715,6 +716,45 @@ export class TournamentsService {
     return matches;
   }
 
+  async manuallyUpdateMatch(matchId: number, dto: ManualUpdateMatchDto) {
+    const match = await this.matchesRepo.findOne({
+      where: { id: matchId },
+      relations: { season: true, tournament: true },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match not found');
+    }
+
+    const update = this.normalizeManualMatchUpdate(dto);
+
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException({
+        message: 'No match fields provided for update',
+        code: 'BAD_REQUEST',
+      });
+    }
+
+    Object.assign(match, update);
+    const savedMatch = await this.matchesRepo.save(match);
+
+    this.updatesGateway.sendMatchesUpdate([
+      {
+        externalId: Number(savedMatch.external_id),
+        seasonExternalId: Number(match.season.external_id),
+        tournamentExternalId: Number(match.tournament.external_id),
+        homeTeam: savedMatch.home_team ?? '',
+        awayTeam: savedMatch.away_team ?? '',
+        startTime: savedMatch.start_time,
+        status: savedMatch.status,
+        homeScore: savedMatch.home_score,
+        awayScore: savedMatch.away_score,
+      },
+    ]);
+
+    return savedMatch;
+  }
+
   // TODO rename Matches to Match
   /* This function is used for testing.
    * Simulates a change in the match. */
@@ -807,6 +847,143 @@ export class TournamentsService {
     }
 
     return Math.max(apiScore, dbScore);
+  }
+
+  private normalizeManualMatchUpdate(
+    dto: ManualUpdateMatchDto,
+  ): Partial<Matches> {
+    if (!dto || typeof dto !== 'object') {
+      throw new BadRequestException({
+        message: 'Request body is required',
+        code: 'BAD_REQUEST',
+      });
+    }
+
+    const update: Partial<Matches> = {};
+
+    const homeTeam = this.pickManualUpdateValue(dto, 'homeTeam', 'home_team');
+    if (homeTeam.exists) {
+      update.home_team = this.normalizeNullableString(
+        homeTeam.value,
+        'homeTeam',
+      );
+    }
+
+    const awayTeam = this.pickManualUpdateValue(dto, 'awayTeam', 'away_team');
+    if (awayTeam.exists) {
+      update.away_team = this.normalizeNullableString(
+        awayTeam.value,
+        'awayTeam',
+      );
+    }
+
+    const startTime = this.pickManualUpdateValue(
+      dto,
+      'startTime',
+      'start_time',
+    );
+    if (startTime.exists) {
+      update.start_time = this.normalizeNullableDate(
+        startTime.value,
+        'startTime',
+      );
+    }
+
+    const status = this.pickManualUpdateValue(dto, 'status');
+    if (status.exists) {
+      update.status = this.parseMatchStatus(status.value as string | null);
+    }
+
+    const homeScore = this.pickManualUpdateValue(
+      dto,
+      'homeScore',
+      'home_score',
+    );
+    if (homeScore.exists) {
+      update.home_score = this.normalizeNullableScore(
+        homeScore.value,
+        'homeScore',
+      );
+    }
+
+    const awayScore = this.pickManualUpdateValue(
+      dto,
+      'awayScore',
+      'away_score',
+    );
+    if (awayScore.exists) {
+      update.away_score = this.normalizeNullableScore(
+        awayScore.value,
+        'awayScore',
+      );
+    }
+
+    return update;
+  }
+
+  private pickManualUpdateValue(
+    dto: ManualUpdateMatchDto,
+    primaryKey: keyof ManualUpdateMatchDto,
+    fallbackKey?: keyof ManualUpdateMatchDto,
+  ): { exists: boolean; value: unknown } {
+    if (Object.prototype.hasOwnProperty.call(dto, primaryKey)) {
+      return { exists: true, value: dto[primaryKey] };
+    }
+
+    if (fallbackKey && Object.prototype.hasOwnProperty.call(dto, fallbackKey)) {
+      return { exists: true, value: dto[fallbackKey] };
+    }
+
+    return { exists: false, value: undefined };
+  }
+
+  private normalizeNullableString(value: unknown, fieldName: string) {
+    if (value === null) {
+      return null;
+    }
+
+    if (typeof value !== 'string') {
+      throw new BadRequestException(`${fieldName} must be a string or null`);
+    }
+
+    const trimmedValue = value.trim();
+    if (trimmedValue.length > 255) {
+      throw new BadRequestException(`${fieldName} must be 255 characters max`);
+    }
+
+    return trimmedValue;
+  }
+
+  private normalizeNullableDate(value: unknown, fieldName: string) {
+    if (value === null) {
+      return null;
+    }
+
+    if (typeof value !== 'string' && !(value instanceof Date)) {
+      throw new BadRequestException(`${fieldName} must be an ISO date or null`);
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException(`${fieldName} must be a valid date`);
+    }
+
+    return date;
+  }
+
+  private normalizeNullableScore(value: unknown, fieldName: string) {
+    if (value === null) {
+      return null;
+    }
+
+    const score = Number(value);
+    if (!Number.isInteger(score) || score < 0) {
+      throw new BadRequestException(
+        `${fieldName} must be an integer greater than or equal to 0, or null`,
+      );
+    }
+
+    return score;
   }
 
   private parseMatchStatus(
