@@ -37,6 +37,7 @@ export type UpsertMatchInput = {
   status: MatchStatus | null;
   homeScore: number | null;
   awayScore: number | null;
+  hidePredictions?: boolean;
 };
 
 export type MatchChangeReason = 'status' | 'score' | 'other';
@@ -753,6 +754,7 @@ export class TournamentsService {
         status: savedMatch.status,
         homeScore: savedMatch.home_score,
         awayScore: savedMatch.away_score,
+        hidePredictions: savedMatch.hide_predictions,
       },
     ]);
 
@@ -929,6 +931,18 @@ export class TournamentsService {
       );
     }
 
+    const hidePredictions = this.pickManualUpdateValue(
+      dto,
+      'hidePredictions',
+      'hide_predictions',
+    );
+    if (hidePredictions.exists) {
+      update.hide_predictions = this.normalizeBoolean(
+        hidePredictions.value,
+        'hidePredictions',
+      );
+    }
+
     return update;
   }
 
@@ -995,6 +1009,14 @@ export class TournamentsService {
     }
 
     return score;
+  }
+
+  private normalizeBoolean(value: unknown, fieldName: string) {
+    if (typeof value !== 'boolean') {
+      throw new BadRequestException(`${fieldName} must be a boolean`);
+    }
+
+    return value;
   }
 
   private parseMatchStatus(
