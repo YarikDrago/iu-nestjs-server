@@ -59,6 +59,13 @@ export class Matches {
   @Column({ type: 'int', nullable: true })
   away_score: number | null;
 
+  @Column({
+    type: 'boolean',
+    default: false,
+    comment: "Hides other users' predictions for this match",
+  })
+  hide_predictions: boolean;
+
   @UpdateDateColumn({
     type: 'timestamp',
     default: () => 'TIMESTAMP',

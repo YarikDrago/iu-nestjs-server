@@ -23,6 +23,7 @@ import { Predictions } from './tournaments/entities/predictions.entity';
 // import { InitialSchema1780963200000 } from './migrations/1780963200000-InitialSchema';
 import { CreateGroupMemberRoleNames1781049600000 } from './migrations/1781049600000-CreateGroupMemberRoleNames';
 import { AlterMatchesStatusToEnum1781136000000 } from './migrations/1781136000000-AlterMatchesStatusToEnum';
+import { AddHidePredictionsToMatches1781222400000 } from './migrations/1781222400000-AddHidePredictionsToMatches';
 
 export default new DataSource({
   type: 'mysql',
@@ -54,6 +55,7 @@ export default new DataSource({
     // InitialSchema1780963200000, // TODO run this migration after FIFA
     CreateGroupMemberRoleNames1781049600000,
     AlterMatchesStatusToEnum1781136000000,
+    AddHidePredictionsToMatches1781222400000,
   ],
   timezone: 'Z',
   extra: {
