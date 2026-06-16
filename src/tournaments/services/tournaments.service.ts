@@ -17,6 +17,7 @@ import { FootballMatchDto } from '../../football/dto/football-match.dto';
 import { UpdatesGateway } from '../../updates/updates.gateway';
 import { TournamentNotificationService } from './tournament_notification.service';
 import { ManualUpdateMatchDto } from '../dto/manual-update-match.dto';
+import { MatchResponseDto } from '../dto/match-response.dto';
 
 export type UpsertSeasonInput = {
   externalId: number;
@@ -145,7 +146,7 @@ export class TournamentsService {
     return {
       ...tournament,
       season: activeSeason,
-      matches,
+      matches: matches.map((match) => this.toMatchResponseDto(match)),
     };
   }
 
@@ -702,7 +703,10 @@ export class TournamentsService {
     return code;
   }
 
-  async getCompetitionMatches(competionId: number, seasonId: number) {
+  async getCompetitionMatches(
+    competionId: number,
+    seasonId: number,
+  ): Promise<MatchResponseDto[]> {
     console.log(
       'try to get matches for competition:',
       competionId,
@@ -713,7 +717,7 @@ export class TournamentsService {
       where: { tournament_id: competionId, season_id: seasonId },
     });
 
-    return matches;
+    return (await matches).map((match) => this.toMatchResponseDto(match));
   }
 
   async manuallyUpdateMatch(matchId: number, dto: ManualUpdateMatchDto) {
@@ -832,6 +836,13 @@ export class TournamentsService {
     }
 
     console.log('changed match:', logData);
+  }
+
+  private toMatchResponseDto(match: Matches): MatchResponseDto {
+    return {
+      ...match,
+      hide_predictions: match.hide_predictions,
+    };
   }
 
   private getMaxScoreValue(
