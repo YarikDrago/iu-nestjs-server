@@ -20,6 +20,7 @@ import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_n
 import { GroupMemberNotificationSettings } from './tournaments/entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from './tournaments/entities/tournament_user_notification_settings.entity';
 import { Predictions } from './tournaments/entities/predictions.entity';
+// import { InitialSchema1780963200000 } from './migrations/1780963200000-InitialSchema';
 import { CreateGroupMemberRoleNames1781049600000 } from './migrations/1781049600000-CreateGroupMemberRoleNames';
 import { AlterMatchesStatusToEnum1781136000000 } from './migrations/1781136000000-AlterMatchesStatusToEnum';
 
@@ -50,6 +51,7 @@ export default new DataSource({
     Predictions,
   ],
   migrations: [
+    // InitialSchema1780963200000, // TODO run this migration after FIFA
     CreateGroupMemberRoleNames1781049600000,
     AlterMatchesStatusToEnum1781136000000,
   ],
