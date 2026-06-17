@@ -173,7 +173,7 @@ export class InitialSchema1780963200000 implements MigrationInterface {
         group_id BIGINT NOT NULL,
         user_id BIGINT NOT NULL,
         joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        status VARCHAR(100) NOT NULL,
+        status ENUM('unverified', 'verified', 'rejected', 'left') NOT NULL,
         UNIQUE INDEX UQ_group_members_group_user (group_id, user_id),
         INDEX IDX_group_members_group_id (group_id),
         INDEX IDX_group_members_user_id (user_id),
