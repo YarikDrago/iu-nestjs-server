@@ -24,6 +24,7 @@ import { Predictions } from './tournaments/entities/predictions.entity';
 import { CreateGroupMemberRoleNames1781049600000 } from './migrations/1781049600000-CreateGroupMemberRoleNames';
 import { AlterMatchesStatusToEnum1781136000000 } from './migrations/1781136000000-AlterMatchesStatusToEnum';
 import { AddHidePredictionsToMatches1781222400000 } from './migrations/1781222400000-AddHidePredictionsToMatches';
+import { CascadeGroupMemberNotificationSettings1781308800000 } from './migrations/1781308800000-CascadeGroupMemberNotificationSettings';
 
 export default new DataSource({
   type: 'mysql',
@@ -56,6 +57,7 @@ export default new DataSource({
     CreateGroupMemberRoleNames1781049600000,
     AlterMatchesStatusToEnum1781136000000,
     AddHidePredictionsToMatches1781222400000,
+    CascadeGroupMemberNotificationSettings1781308800000,
   ],
   timezone: 'Z',
   extra: {
