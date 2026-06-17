@@ -12,7 +12,10 @@ import { Matches, MatchStatus } from '../entities/matches.entity';
 import { UpdatesService } from '../../updates/updates.service';
 import { Group } from '../entities/group.entity';
 import { randomBytes } from 'node:crypto';
-import { GroupMembers } from '../entities/group_members.entity';
+import {
+  GroupMembers,
+  GroupMemberStatus,
+} from '../entities/group_members.entity';
 import { FootballMatchDto } from '../../football/dto/football-match.dto';
 import { UpdatesGateway } from '../../updates/updates.gateway';
 import { TournamentNotificationService } from './tournament_notification.service';
@@ -546,7 +549,11 @@ export class TournamentsService {
       invite_code: this.generateInviteCode(),
     });
     const group = await this.groupRepo.save(groupEntity);
-    await this.addUserAsGroupMember(group.id, input.ownerId, 'verified');
+    await this.addUserAsGroupMember(
+      group.id,
+      input.ownerId,
+      GroupMemberStatus.Verified,
+    );
     return group;
   }
 
@@ -588,7 +595,7 @@ export class TournamentsService {
   async addUserAsGroupMember(
     groupId: number,
     userId: number,
-    status = 'unverified',
+    status = GroupMemberStatus.Unverified,
   ) {
     console.log('try to add user as group member (service)');
     const groupMemberEntity = this.groupMembersRepo.create({
@@ -614,7 +621,7 @@ export class TournamentsService {
     /* Get groups where the user is owner or verified member. */
     const userInGroups = await this.groupMembersRepo.find({
       // TODO replace hardcoded value with constant
-      where: { user_id: userId, status: 'verified' },
+      where: { user_id: userId, status: GroupMemberStatus.Verified },
       relations: { group: true },
     });
     console.log('userInGroups:', userInGroups);
@@ -651,7 +658,11 @@ export class TournamentsService {
     return true;
   }
 
-  async updateGroupMember(groupId: number, userId: number, status: string) {
+  async updateGroupMember(
+    groupId: number,
+    userId: number,
+    status: GroupMemberStatus,
+  ) {
     console.log('try to update group member status (service)');
     const response = await this.groupMembersRepo.update(
       { group_id: groupId, user_id: userId },

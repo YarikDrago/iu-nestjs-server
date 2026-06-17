@@ -12,6 +12,7 @@ import {
 import { TournamentsPredictionsService } from '../tournaments/services/tournaments_predictions.service';
 import { Matches } from '../tournaments/entities/matches.entity';
 import { Predictions } from '../tournaments/entities/predictions.entity';
+import { GroupMemberStatus } from '../tournaments/entities/group_members.entity';
 
 type PendingPredictionInput = {
   groupId: number;
@@ -356,7 +357,7 @@ export class TelegramController {
       telegramAccount.user.id,
     );
 
-    if (!membership || membership.status !== 'verified') {
+    if (!membership || membership.status !== GroupMemberStatus.Verified) {
       await this.telegramService.sendMessage(
         chatId,
         'You are not a verified member of this prediction group.',

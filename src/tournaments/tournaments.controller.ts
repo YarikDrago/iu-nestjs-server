@@ -24,6 +24,7 @@ import { TournamentsPredictionsService } from './services/tournaments_prediction
 import { UpdateTournamentUserNotificationSettingsDto } from './dto/update-tournament-user-notification-settings.dto';
 import { TournamentNotificationService } from './services/tournament_notification.service';
 import { ManualUpdateMatchDto } from './dto/manual-update-match.dto';
+import { GroupMemberStatus } from './entities/group_members.entity';
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -362,7 +363,7 @@ export class TournamentsController {
     @Req() req: Request,
     @Param('groupId') groupId: number,
     @Param('userId') userId: number,
-    @Body() body: { status: string },
+    @Body() body: { status: GroupMemberStatus | 'delete' },
   ) {
     try {
       console.log(
@@ -373,9 +374,9 @@ export class TournamentsController {
       const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
       const owner = await this.usersService.findUserByEmail(tokenPayload.email);
 
-      // TODO change status to enum
       if (
-        !['verified', 'unverified', 'suspended', 'delete'].includes(body.status)
+        body.status !== 'delete' &&
+        !Object.values(GroupMemberStatus).includes(body.status)
       ) {
         throw new BadRequestException({
           message: 'Invalid status',
@@ -414,7 +415,7 @@ export class TournamentsController {
         body.status,
       );
 
-      if (body.status === 'verified') {
+      if (body.status === GroupMemberStatus.Verified) {
         this.mailService.sendUserApprovedStatusJoinGroup(
           member.email,
           group.name,
@@ -616,7 +617,7 @@ export class TournamentsController {
           id: group.id,
           name: group.name,
           members: group.members
-            .filter((member) => member.status === 'verified')
+            .filter((member) => member.status === GroupMemberStatus.Verified)
             .map((member) => ({
               id: member.id,
               user_id: member.user_id,

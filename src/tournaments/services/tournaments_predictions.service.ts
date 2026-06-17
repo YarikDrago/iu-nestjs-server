@@ -8,7 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Predictions } from '../entities/predictions.entity';
 import { Repository } from 'typeorm';
 import { Matches } from '../entities/matches.entity';
-import { GroupMembers } from '../entities/group_members.entity';
+import {
+  GroupMembers,
+  GroupMemberStatus,
+} from '../entities/group_members.entity';
 import { UpdatesGateway } from '../../updates/updates.gateway';
 
 @Injectable()
@@ -50,7 +53,11 @@ export class TournamentsPredictionsService {
 
     /* Check if the user is a member of the group */
     const membership = await this.groupMembersRepo.findOne({
-      where: { user_id: userId, group_id: groupId, status: 'verified' },
+      where: {
+        user_id: userId,
+        group_id: groupId,
+        status: GroupMemberStatus.Verified,
+      },
     });
     if (!membership) {
       throw new UnauthorizedException(

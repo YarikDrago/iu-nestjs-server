@@ -11,6 +11,13 @@ import { Group } from './group.entity';
 import { User } from '../../users/entities/user.entity';
 import { GroupMemberNotificationSettings } from './group_member_notification_settings.entity';
 
+export enum GroupMemberStatus {
+  Unverified = 'unverified',
+  Verified = 'verified',
+  Rejected = 'rejected',
+  Left = 'left',
+}
+
 @Entity({ name: 'group_members' })
 export class GroupMembers {
   @PrimaryGeneratedColumn({ type: 'bigint' })
@@ -42,7 +49,6 @@ export class GroupMembers {
   })
   joined_at: Date;
 
-  // TODO create enum or special table statuses
-  @Column({ type: 'varchar', length: 100, nullable: false })
-  status: string; // unverified, verified, rejected
+  @Column({ type: 'enum', enum: GroupMemberStatus, nullable: false })
+  status: GroupMemberStatus;
 }

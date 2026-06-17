@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { GroupMembers } from '../entities/group_members.entity';
+import {
+  GroupMembers,
+  GroupMemberStatus,
+} from '../entities/group_members.entity';
 import { GroupMemberNotificationSettings } from '../entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from '../entities/tournament_user_notification_settings.entity';
 import { Tournaments } from '../entities/tournament.entity';
@@ -15,7 +18,7 @@ export type GroupMemberNotificationSettingsData = {
   groupMemberId: number;
   groupId: number;
   userId: number;
-  memberStatus: string;
+  memberStatus: GroupMemberStatus;
   notificationSettings: {
     notifyMatchStatusChanged: boolean;
     notifyMatchScoreChanged: boolean;
@@ -81,7 +84,7 @@ export class TournamentNotificationService {
       throw new NotFoundException('Group member not found');
     }
 
-    if (groupMember.status !== 'verified') {
+    if (groupMember.status !== GroupMemberStatus.Verified) {
       throw new UnauthorizedException('User is not verified in this group');
     }
 
