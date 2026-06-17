@@ -395,8 +395,25 @@ export class TournamentsController {
       }
 
       const group = await this.tournamentsService.findGroupById(groupId, true);
-      if (owner.id !== group?.owner_id) {
-        throw new UnauthorizedException('You are not owner of this group');
+
+      if (!group) {
+        throw new BadRequestException('Group not found');
+      }
+
+      const isOwner = owner.id === group.owner_id;
+      const isSelfLeave =
+        owner.id === Number(userId) && body.status === GroupMemberStatus.Left;
+
+      if (!isOwner && !isSelfLeave) {
+        throw new UnauthorizedException(
+          'You can only leave group or manage members as owner',
+        );
+      }
+
+      if (isOwner && isSelfLeave) {
+        throw new BadRequestException(
+          'Owner cannot leave own group. Transfer ownership or delete group',
+        );
       }
 
       if (body.status === 'delete') {
