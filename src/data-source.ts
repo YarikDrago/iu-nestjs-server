@@ -60,9 +60,9 @@ export default new DataSource({
     CascadeGroupMemberNotificationSettings1781308800000,
   ],
   timezone: 'Z',
-  extra: {
-    initSql: "SET time_zone = '+00:00'",
-  },
+  // extra: {
+  //   initSql: "SET time_zone = '+00:00'",
+  // },
   ssl: process.env.DB_SSL_CA
     ? {
         ca: fs.readFileSync(path.resolve(process.env.DB_SSL_CA)),

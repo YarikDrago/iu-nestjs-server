@@ -66,9 +66,9 @@ import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_n
       ],
       // synchronize: true, // WARNING!
       timezone: 'Z',
-      extra: {
-        initSql: "SET time_zone = '+00:00'",
-      },
+      // extra: {
+      //   initSql: "SET time_zone = '+00:00'",
+      // },
 
       ssl: process.env.DB_SSL_CA
         ? {
