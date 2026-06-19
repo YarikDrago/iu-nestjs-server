@@ -47,6 +47,11 @@ export type MatchChangeReason = 'status' | 'score' | 'other';
 
 export type ChangedFootballMatchDto = FootballMatchDto & {
   changeReason: MatchChangeReason;
+  isStatusChanged: boolean;
+  isScoreChanged: boolean;
+  previousStatus: MatchStatus | null;
+  previousHomeScore: number | null;
+  previousAwayScore: number | null;
   /* For comparison API score with DB score
    * An API score not always correct. It can send, sometimes, null
    * In this situation we decide that a score can only increase */
@@ -63,6 +68,16 @@ export type UpsertGroupInput = {
   tournamentId: number;
   seasonId: number;
   ownerId: number;
+};
+
+type ManualMatchUpdate = {
+  home_team?: string | null;
+  away_team?: string | null;
+  start_time?: Date | null;
+  status?: MatchStatus | null;
+  home_score?: number | null;
+  away_score?: number | null;
+  hide_predictions?: boolean;
 };
 
 @Injectable()
@@ -273,6 +288,11 @@ export class TournamentsService {
         const changedMatch: ChangedFootballMatchDto = {
           ...match,
           changeReason: 'other',
+          isStatusChanged: false,
+          isScoreChanged: false,
+          previousStatus: null,
+          previousHomeScore: null,
+          previousAwayScore: null,
           apiHomeScore,
           apiAwayScore,
           homeScore: apiHomeScore,
@@ -291,6 +311,7 @@ export class TournamentsService {
       const isAwayTeamChanged = (dbMatch.away_team || '') !== awayTeamApi;
       const isHomeScoreChanged = (dbMatch.home_score ?? null) !== homeScore;
       const isAwayScoreChanged = (dbMatch.away_score ?? null) !== awayScore;
+      const isScoreChanged = isHomeScoreChanged || isAwayScoreChanged;
 
       const dbStartTime = dbMatch.start_time
         ? new Date(dbMatch.start_time)
@@ -310,17 +331,21 @@ export class TournamentsService {
         continue;
       }
 
-      const changeReason: MatchChangeReason =
-        isHomeScoreChanged || isAwayScoreChanged
-          ? 'score'
-          : isStatusChanged
-            ? 'status'
-            : 'other';
+      const changeReason: MatchChangeReason = isScoreChanged
+        ? 'score'
+        : isStatusChanged
+          ? 'status'
+          : 'other';
 
       /* Add the match to the list of changed matches if any of the following conditions are met */
       const changedMatch: ChangedFootballMatchDto = {
         ...match,
         changeReason,
+        isStatusChanged,
+        isScoreChanged,
+        previousStatus: dbMatch.status ?? null,
+        previousHomeScore: dbMatch.home_score ?? null,
+        previousAwayScore: dbMatch.away_score ?? null,
         apiHomeScore,
         apiAwayScore,
         homeScore,
@@ -505,6 +530,8 @@ export class TournamentsService {
       transformApiMatchesToDbMatches(updatedMatchesApi);
 
     await this.upsertMatches(transformedApiMatches);
+
+    await this.notifyChangedMatches(updatedMatchesApi);
 
     this.updatesGateway.sendMatchesUpdate(transformedApiMatches);
 
@@ -751,8 +778,52 @@ export class TournamentsService {
       });
     }
 
+    const hasStatusUpdate = this.hasManualMatchUpdateKey(update, 'status');
+    const hasHomeScoreUpdate = this.hasManualMatchUpdateKey(
+      update,
+      'home_score',
+    );
+    const hasAwayScoreUpdate = this.hasManualMatchUpdateKey(
+      update,
+      'away_score',
+    );
+    const isStatusChanged =
+      hasStatusUpdate && (match.status ?? null) !== (update.status ?? null);
+    const isScoreChanged =
+      (hasHomeScoreUpdate &&
+        (match.home_score ?? null) !== (update.home_score ?? null)) ||
+      (hasAwayScoreUpdate &&
+        (match.away_score ?? null) !== (update.away_score ?? null));
+    const previousStatus = match.status ?? null;
+    const previousHomeScore = match.home_score ?? null;
+    const previousAwayScore = match.away_score ?? null;
+
     Object.assign(match, update);
     const savedMatch = await this.matchesRepo.save(match);
+
+    if (isStatusChanged) {
+      await this.tournamentNotificationService.notifyMatchStatusChanged({
+        tournamentExternalId: Number(match.tournament.external_id),
+        tournamentName: match.tournament.name,
+        homeTeam: savedMatch.home_team ?? '',
+        awayTeam: savedMatch.away_team ?? '',
+        previousStatus,
+        status: savedMatch.status,
+      });
+    }
+
+    if (isScoreChanged) {
+      await this.tournamentNotificationService.notifyMatchScoreChanged({
+        tournamentExternalId: Number(match.tournament.external_id),
+        tournamentName: match.tournament.name,
+        homeTeam: savedMatch.home_team ?? '',
+        awayTeam: savedMatch.away_team ?? '',
+        previousHomeScore,
+        previousAwayScore,
+        homeScore: savedMatch.home_score,
+        awayScore: savedMatch.away_score,
+      });
+    }
 
     this.updatesGateway.sendMatchesUpdate([
       {
@@ -858,6 +929,35 @@ export class TournamentsService {
     };
   }
 
+  private async notifyChangedMatches(matches: ChangedFootballMatchDto[]) {
+    for (const match of matches) {
+      const notificationChange = {
+        tournamentExternalId: Number(match.competition.id),
+        tournamentName: match.competition.name,
+        homeTeam: match.homeTeam.name || '',
+        awayTeam: match.awayTeam.name || '',
+        previousStatus: match.previousStatus,
+        status: this.parseMatchStatus(match.status),
+        previousHomeScore: match.previousHomeScore,
+        previousAwayScore: match.previousAwayScore,
+        homeScore: match.homeScore,
+        awayScore: match.awayScore,
+      };
+
+      if (match.isStatusChanged) {
+        await this.tournamentNotificationService.notifyMatchStatusChanged(
+          notificationChange,
+        );
+      }
+
+      if (match.isScoreChanged) {
+        await this.tournamentNotificationService.notifyMatchScoreChanged(
+          notificationChange,
+        );
+      }
+    }
+  }
+
   private getMaxScoreValue(
     apiScore: number | null,
     dbScore: number | null,
@@ -875,7 +975,7 @@ export class TournamentsService {
 
   private normalizeManualMatchUpdate(
     dto: ManualUpdateMatchDto,
-  ): Partial<Matches> {
+  ): ManualMatchUpdate {
     if (!dto || typeof dto !== 'object') {
       throw new BadRequestException({
         message: 'Request body is required',
@@ -883,7 +983,7 @@ export class TournamentsService {
       });
     }
 
-    const update: Partial<Matches> = {};
+    const update: ManualMatchUpdate = {};
 
     const homeTeam = this.pickManualUpdateValue(dto, 'homeTeam', 'home_team');
     if (homeTeam.exists) {
@@ -971,6 +1071,13 @@ export class TournamentsService {
     }
 
     return { exists: false, value: undefined };
+  }
+
+  private hasManualMatchUpdateKey(
+    update: ManualMatchUpdate,
+    key: keyof ManualMatchUpdate,
+  ): boolean {
+    return Boolean(Object.prototype.hasOwnProperty.call(update, key));
   }
 
   private normalizeNullableString(value: unknown, fieldName: string) {

@@ -1,11 +1,12 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TelegramController } from './telegram.controller';
 import { TelegramService } from './telegram.service';
 import { UsersModule } from '../users/users.module';
 import { TournamentsModule } from '../tournaments/tournaments.module';
 
 @Module({
-  imports: [UsersModule, TournamentsModule],
+  /* forwardRef(() => TournamentsModule) for breaking circular dependency between TournamentsModule and TelegramModule */
+  imports: [UsersModule, forwardRef(() => TournamentsModule)],
   controllers: [TelegramController],
   providers: [TelegramService],
   exports: [TelegramService],

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Logger,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -13,6 +14,8 @@ import {
 import { GroupMemberNotificationSettings } from '../entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from '../entities/tournament_user_notification_settings.entity';
 import { Tournaments } from '../entities/tournament.entity';
+import { TelegramService } from '../../telegram/telegram.service';
+import { MatchStatus } from '../entities/matches.entity';
 
 export type GroupMemberNotificationSettingsData = {
   groupMemberId: number;
@@ -42,8 +45,23 @@ export type TournamentUserNotificationSettingsData = {
   updatedAt: Date;
 };
 
+export type MatchNotificationChange = {
+  tournamentExternalId: number;
+  tournamentName: string;
+  homeTeam: string;
+  awayTeam: string;
+  previousStatus?: MatchStatus | null;
+  status?: MatchStatus | null;
+  previousHomeScore?: number | null;
+  previousAwayScore?: number | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+};
+
 @Injectable()
 export class TournamentNotificationService {
+  private readonly logger = new Logger(TournamentNotificationService.name);
+
   constructor(
     @InjectRepository(Tournaments)
     private readonly tournamentsRepo: Repository<Tournaments>,
@@ -53,6 +71,7 @@ export class TournamentNotificationService {
     private readonly groupMemberNotificationSettingsRepo: Repository<GroupMemberNotificationSettings>,
     @InjectRepository(TournamentUserNotificationSettings)
     private readonly tournamentUserNotificationSettingsRepo: Repository<TournamentUserNotificationSettings>,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async createGroupMemberNotificationSettings(
@@ -258,5 +277,97 @@ export class TournamentNotificationService {
       },
       updatedAt: updatedSettings.updatedAt,
     };
+  }
+
+  async notifyMatchStatusChanged(change: MatchNotificationChange) {
+    await this.notifyTournamentUsers(
+      change.tournamentExternalId,
+      'notifyMatchStatusChanged',
+      this.formatMatchStatusChangedMessage(change),
+    );
+  }
+
+  async notifyMatchScoreChanged(change: MatchNotificationChange) {
+    await this.notifyTournamentUsers(
+      change.tournamentExternalId,
+      'notifyMatchScoreChanged',
+      this.formatMatchScoreChangedMessage(change),
+    );
+  }
+
+  private async notifyTournamentUsers(
+    tournamentExternalId: number,
+    settingKey: 'notifyMatchStatusChanged' | 'notifyMatchScoreChanged',
+    message: string,
+  ) {
+    console.log('notify user with changes in a tournament');
+    const settings = await this.tournamentUserNotificationSettingsRepo.find({
+      where: {
+        tournamentId: tournamentExternalId,
+        [settingKey]: true,
+      },
+      relations: {
+        user: {
+          telegramAccounts: true,
+        },
+      },
+    });
+
+    const chatIds = Array.from(
+      new Set(
+        settings
+          .flatMap((setting) => setting.user?.telegramAccounts ?? [])
+          .map((account) => account.chatId)
+          .filter((chatId): chatId is number => chatId !== null),
+      ),
+    );
+
+    const results = await Promise.allSettled(
+      chatIds.map((chatId) =>
+        this.telegramService.sendMessage(chatId, message, {
+          parse_mode: 'HTML',
+        }),
+      ),
+    );
+
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        this.logger.warn(
+          `Failed to send tournament notification to chat ${chatIds[index]}: ${String(result.reason)}`,
+        );
+      }
+    });
+  }
+
+  private formatMatchStatusChangedMessage(change: MatchNotificationChange) {
+    return [
+      '<b>Match status changed</b>',
+      `<b>Match:</b> ${this.escapeHtml(change.homeTeam)} - ${this.escapeHtml(change.awayTeam)}`,
+      `<b>Status:</b> <code>${this.formatNullableValue(change.previousStatus)}</code> -> <code>${this.formatNullableValue(change.status)}</code>`,
+    ].join('\n');
+  }
+
+  private formatMatchScoreChangedMessage(change: MatchNotificationChange) {
+    return [
+      '<b>Match score changed</b>',
+      `<b>Tournament:</b> ${this.escapeHtml(change.tournamentName)}`,
+      `<b>Match:</b> ${this.escapeHtml(change.homeTeam)} - ${this.escapeHtml(change.awayTeam)}`,
+      `<b>Score:</b> <code>${this.formatScore(change.previousHomeScore, change.previousAwayScore)}</code> -> <code>${this.formatScore(change.homeScore, change.awayScore)}</code>`,
+    ].join('\n');
+  }
+
+  private formatScore(homeScore?: number | null, awayScore?: number | null) {
+    return `${this.formatNullableValue(homeScore)}:${this.formatNullableValue(awayScore)}`;
+  }
+
+  private formatNullableValue(value: string | number | null | undefined) {
+    return value ?? 'null';
+  }
+
+  private escapeHtml(value: string) {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 }

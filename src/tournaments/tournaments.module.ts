@@ -1,5 +1,5 @@
 import { TournamentsService } from './services/tournaments.service';
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { FootballModule } from '../football/football.module';
 import { TournamentsController } from './tournaments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -18,6 +18,7 @@ import { GroupMemberNotificationSettings } from './entities/group_member_notific
 import { TournamentUserNotificationSettings } from './entities/tournament_user_notification_settings.entity';
 import { TournamentNotificationService } from './services/tournament_notification.service';
 import { GroupMemberRoleNames } from './entities/group_member_role_names.entity';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { GroupMemberRoleNames } from './entities/group_member_role_names.entity'
     UsersModule,
     UpdatesModule,
     MailModule,
+    forwardRef(() => TelegramModule),
   ],
   providers: [
     TournamentsService,
