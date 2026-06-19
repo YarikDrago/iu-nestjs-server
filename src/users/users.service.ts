@@ -64,6 +64,13 @@ export class UsersService {
     });
   }
 
+  async getUserTelegramAccounts(userId: number) {
+    return await this.userTelegramAccountsRepository.find({
+      where: { userId },
+      order: { linkedAt: 'DESC' },
+    });
+  }
+
   async addUserTelegramAccount(
     userId: number,
     dto: UserTelegramAccountDto,

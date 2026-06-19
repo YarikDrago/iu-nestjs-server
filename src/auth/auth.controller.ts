@@ -173,6 +173,19 @@ export class AuthController {
     };
   }
 
+  @Get('telegram-account')
+  async getTelegramAccounts(@Req() req: Request) {
+    console.log('try to get telegram accounts');
+    const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
+    const user = await this.usersService.findUserByEmail(tokenPayload.email);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return await this.usersService.getUserTelegramAccounts(user.id);
+  }
+
   @Post('telegram-account')
   async addTelegramAccount(
     @Req() req: Request,
