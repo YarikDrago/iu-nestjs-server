@@ -116,6 +116,7 @@ export class TelegramController {
         if (telegramAccount) {
           await this.telegramService.setMyCommands(chatId, [
             { command: 'predictions', description: 'Prediction groups' },
+            { command: 'chat_info', description: 'Show chat info' },
             { command: 'test_msg', description: 'Test message' },
           ]);
 
@@ -129,16 +130,27 @@ export class TelegramController {
         } else {
           await this.telegramService.setMyCommands(chatId, [
             { command: 'start', description: 'Start a chat' },
+            { command: 'chat_info', description: 'Show chat info' },
           ]);
 
           await this.telegramService.sendMessage(
             chatId,
             'Unverified user.\nPlease verify your account:\n' +
               '1) Create and activate account on https://uliantcev.ru/signup;\n' +
-              '2) Link your account with Telegram on https:"//uliantcev.ru/settings;\n' +
-              `Copy your telegram ID into the field: ${fromUserId}`,
+              '2) Link your account with Telegram on https://uliantcev.ru/settings;\n' +
+              `Copy your Telegram user ID into the field: ${fromUserId ?? 'Unknown'}\n` +
+              `Copy your Telegram chat ID into the field: ${chatId}\n` +
+              'You can always get these values with /chat_info.',
           );
         }
+      }
+
+      if (command === '/chat_info') {
+        await this.telegramService.sendMessage(
+          chatId,
+          this.formatChatInfoMessage(chatId, fromUserId),
+          { parse_mode: 'HTML' },
+        );
       }
 
       if (command === '/predictions') {
@@ -732,6 +744,17 @@ export class TelegramController {
 
   private formatNotificationSettingStatus(value: boolean) {
     return value ? 'enabled' : 'disabled';
+  }
+
+  private formatChatInfoMessage(
+    chatId: string | number,
+    telegramUserId?: number,
+  ) {
+    return [
+      '<b>Telegram chat info</b>',
+      `<b>Telegram user ID:</b> <code>${telegramUserId ?? 'Unknown'}</code>`,
+      `<b>Telegram chat ID:</b> <code>${chatId}</code>`,
+    ].join('\n');
   }
 
   private formatDate(date?: Date | string) {
