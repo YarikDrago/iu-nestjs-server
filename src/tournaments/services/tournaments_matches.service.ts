@@ -13,6 +13,15 @@ import { MatchResponseDto } from '../dto/match-response.dto';
 import { Matches, MatchStatus } from '../entities/matches.entity';
 import { Seasons } from '../entities/seasons.entity';
 import { Tournaments } from '../entities/tournament.entity';
+import {
+  hasManualMatchUpdateKey,
+  normalizeManualMatchUpdate,
+} from '../helpers/manual-match-update.helper';
+import {
+  calculateMatchScore,
+  getMaxScoreValue,
+} from '../helpers/match-score.helper';
+import { parseMatchStatus } from '../helpers/match-status.helper';
 import { TournamentNotificationService } from './tournament_notification.service';
 
 export type UpsertMatchInput = {
@@ -41,16 +50,6 @@ export type ChangedFootballMatchDto = FootballMatchDto & {
   apiAwayScore: number | null;
   homeScore: number | null;
   awayScore: number | null;
-};
-
-type ManualMatchUpdate = {
-  home_team?: string | null;
-  away_team?: string | null;
-  start_time?: Date | null;
-  status?: MatchStatus | null;
-  home_score?: number | null;
-  away_score?: number | null;
-  hide_predictions?: boolean;
 };
 
 @Injectable()
@@ -125,8 +124,8 @@ export class TournamentsMatchesService {
     for (const match of matchesFromApi) {
       const dbMatch = dbMatchesByExternalId.get(Number(match.id));
       const { homeScore: apiHomeScore, awayScore: apiAwayScore } =
-        this.calculateMatchScore(match);
-      const statusApi = this.parseMatchStatus(match.status);
+        calculateMatchScore(match);
+      const statusApi = parseMatchStatus(match.status);
       const homeTeamApi = match.homeTeam.name || '';
       const awayTeamApi = match.awayTeam.name || '';
       const startTimeApi = new Date(match.utcDate);
@@ -150,8 +149,8 @@ export class TournamentsMatchesService {
         continue;
       }
 
-      const homeScore = this.getMaxScoreValue(apiHomeScore, dbMatch.home_score);
-      const awayScore = this.getMaxScoreValue(apiAwayScore, dbMatch.away_score);
+      const homeScore = getMaxScoreValue(apiHomeScore, dbMatch.home_score);
+      const awayScore = getMaxScoreValue(apiAwayScore, dbMatch.away_score);
       const isStatusChanged = (dbMatch.status ?? null) !== statusApi;
       const isHomeTeamChanged = (dbMatch.home_team || '') !== homeTeamApi;
       const isAwayTeamChanged = (dbMatch.away_team || '') !== awayTeamApi;
@@ -347,7 +346,7 @@ export class TournamentsMatchesService {
       matches: ChangedFootballMatchDto[],
     ): UpsertMatchInput[] => {
       return matches.map((match) => {
-        const statusApi = this.parseMatchStatus(match.status);
+        const statusApi = parseMatchStatus(match.status);
         const startTimeApi = new Date(match.utcDate);
 
         return {
@@ -374,32 +373,6 @@ export class TournamentsMatchesService {
     this.updatesGateway.sendMatchesUpdate(transformedApiMatches);
 
     console.log('Matches were successfully updated!');
-  }
-
-  calculateMatchScore(match: FootballMatchDto) {
-    let homeScore: number | null = null;
-    let awayScore: number | null = null;
-    if (match.score.halfTime.home !== null) {
-      homeScore = Math.max(
-        match.score.halfTime.home,
-        match.score.fullTime.home || 0,
-      );
-    }
-    if (match.score.halfTime.away !== null) {
-      awayScore = Math.max(
-        match.score.halfTime.away,
-        match.score.fullTime.away || 0,
-      );
-    }
-    if (match.score.regularTime && match.score.extraTime) {
-      homeScore =
-        (match.score.regularTime?.home || 0) +
-        (match.score.extraTime?.home || 0);
-      awayScore =
-        (match.score.regularTime?.away || 0) +
-        (match.score.extraTime?.away || 0);
-    }
-    return { homeScore, awayScore };
   }
 
   async getCompetitionMatches(
@@ -429,7 +402,7 @@ export class TournamentsMatchesService {
       throw new NotFoundException('Match not found');
     }
 
-    const update = this.normalizeManualMatchUpdate(dto);
+    const update = normalizeManualMatchUpdate(dto);
 
     if (Object.keys(update).length === 0) {
       throw new BadRequestException({
@@ -438,15 +411,9 @@ export class TournamentsMatchesService {
       });
     }
 
-    const hasStatusUpdate = this.hasManualMatchUpdateKey(update, 'status');
-    const hasHomeScoreUpdate = this.hasManualMatchUpdateKey(
-      update,
-      'home_score',
-    );
-    const hasAwayScoreUpdate = this.hasManualMatchUpdateKey(
-      update,
-      'away_score',
-    );
+    const hasStatusUpdate = hasManualMatchUpdateKey(update, 'status');
+    const hasHomeScoreUpdate = hasManualMatchUpdateKey(update, 'home_score');
+    const hasAwayScoreUpdate = hasManualMatchUpdateKey(update, 'away_score');
     const isStatusChanged =
       hasStatusUpdate && (match.status ?? null) !== (update.status ?? null);
     const isScoreChanged =
@@ -579,7 +546,7 @@ export class TournamentsMatchesService {
         homeTeam: match.homeTeam.name || '',
         awayTeam: match.awayTeam.name || '',
         previousStatus: match.previousStatus,
-        status: this.parseMatchStatus(match.status),
+        status: parseMatchStatus(match.status),
         previousHomeScore: match.previousHomeScore,
         previousAwayScore: match.previousAwayScore,
         homeScore: match.homeScore,
@@ -598,198 +565,5 @@ export class TournamentsMatchesService {
         );
       }
     }
-  }
-
-  private getMaxScoreValue(
-    apiScore: number | null,
-    dbScore: number | null,
-  ): number | null {
-    if (apiScore === null) {
-      return dbScore;
-    }
-
-    if (dbScore === null) {
-      return apiScore;
-    }
-
-    return Math.max(apiScore, dbScore);
-  }
-
-  private normalizeManualMatchUpdate(
-    dto: ManualUpdateMatchDto,
-  ): ManualMatchUpdate {
-    if (!dto || typeof dto !== 'object') {
-      throw new BadRequestException({
-        message: 'Request body is required',
-        code: 'BAD_REQUEST',
-      });
-    }
-
-    const update: ManualMatchUpdate = {};
-
-    const homeTeam = this.pickManualUpdateValue(dto, 'homeTeam', 'home_team');
-    if (homeTeam.exists) {
-      update.home_team = this.normalizeNullableString(
-        homeTeam.value,
-        'homeTeam',
-      );
-    }
-
-    const awayTeam = this.pickManualUpdateValue(dto, 'awayTeam', 'away_team');
-    if (awayTeam.exists) {
-      update.away_team = this.normalizeNullableString(
-        awayTeam.value,
-        'awayTeam',
-      );
-    }
-
-    const startTime = this.pickManualUpdateValue(
-      dto,
-      'startTime',
-      'start_time',
-    );
-    if (startTime.exists) {
-      update.start_time = this.normalizeNullableDate(
-        startTime.value,
-        'startTime',
-      );
-    }
-
-    const status = this.pickManualUpdateValue(dto, 'status');
-    if (status.exists) {
-      update.status = this.parseMatchStatus(status.value as string | null);
-    }
-
-    const homeScore = this.pickManualUpdateValue(
-      dto,
-      'homeScore',
-      'home_score',
-    );
-    if (homeScore.exists) {
-      update.home_score = this.normalizeNullableScore(
-        homeScore.value,
-        'homeScore',
-      );
-    }
-
-    const awayScore = this.pickManualUpdateValue(
-      dto,
-      'awayScore',
-      'away_score',
-    );
-    if (awayScore.exists) {
-      update.away_score = this.normalizeNullableScore(
-        awayScore.value,
-        'awayScore',
-      );
-    }
-
-    const hidePredictions = this.pickManualUpdateValue(
-      dto,
-      'hidePredictions',
-      'hide_predictions',
-    );
-    if (hidePredictions.exists) {
-      update.hide_predictions = this.normalizeBoolean(
-        hidePredictions.value,
-        'hidePredictions',
-      );
-    }
-
-    return update;
-  }
-
-  private pickManualUpdateValue(
-    dto: ManualUpdateMatchDto,
-    primaryKey: keyof ManualUpdateMatchDto,
-    fallbackKey?: keyof ManualUpdateMatchDto,
-  ): { exists: boolean; value: unknown } {
-    if (Object.prototype.hasOwnProperty.call(dto, primaryKey)) {
-      return { exists: true, value: dto[primaryKey] };
-    }
-
-    if (fallbackKey && Object.prototype.hasOwnProperty.call(dto, fallbackKey)) {
-      return { exists: true, value: dto[fallbackKey] };
-    }
-
-    return { exists: false, value: undefined };
-  }
-
-  private hasManualMatchUpdateKey(
-    update: ManualMatchUpdate,
-    key: keyof ManualMatchUpdate,
-  ): boolean {
-    return Boolean(Object.prototype.hasOwnProperty.call(update, key));
-  }
-
-  private normalizeNullableString(value: unknown, fieldName: string) {
-    if (value === null) {
-      return null;
-    }
-
-    if (typeof value !== 'string') {
-      throw new BadRequestException(`${fieldName} must be a string or null`);
-    }
-
-    const trimmedValue = value.trim();
-    if (trimmedValue.length > 255) {
-      throw new BadRequestException(`${fieldName} must be 255 characters max`);
-    }
-
-    return trimmedValue;
-  }
-
-  private normalizeNullableDate(value: unknown, fieldName: string) {
-    if (value === null) {
-      return null;
-    }
-
-    if (typeof value !== 'string' && !(value instanceof Date)) {
-      throw new BadRequestException(`${fieldName} must be an ISO date or null`);
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      throw new BadRequestException(`${fieldName} must be a valid date`);
-    }
-
-    return date;
-  }
-
-  private normalizeNullableScore(value: unknown, fieldName: string) {
-    if (value === null) {
-      return null;
-    }
-
-    const score = Number(value);
-    if (!Number.isInteger(score) || score < 0) {
-      throw new BadRequestException(
-        `${fieldName} must be an integer greater than or equal to 0, or null`,
-      );
-    }
-
-    return score;
-  }
-
-  private normalizeBoolean(value: unknown, fieldName: string) {
-    if (typeof value !== 'boolean') {
-      throw new BadRequestException(`${fieldName} must be a boolean`);
-    }
-
-    return value;
-  }
-
-  private parseMatchStatus(
-    status: string | null | undefined,
-  ): MatchStatus | null {
-    if (!status) {
-      return null;
-    }
-
-    if (Object.values(MatchStatus).includes(status as MatchStatus)) {
-      return status as MatchStatus;
-    }
-
-    throw new BadRequestException(`Unknown match status: ${status}`);
   }
 }
