@@ -25,11 +25,13 @@ import { UpdateTournamentUserNotificationSettingsDto } from './dto/update-tourna
 import { TournamentNotificationService } from './services/tournament_notification.service';
 import { ManualUpdateMatchDto } from './dto/manual-update-match.dto';
 import { GroupMemberStatus } from './entities/group_members.entity';
+import { TournamentsGroupService } from './services/tournaments_group.service';
 
 @Controller('tournaments')
 export class TournamentsController {
   constructor(
     private readonly tournamentsService: TournamentsService,
+    private readonly tournamentsGroupService: TournamentsGroupService,
     private readonly tournamentsPredictionsService: TournamentsPredictionsService,
     private readonly tournamentNotificationService: TournamentNotificationService,
     private readonly footballService: FootballService,
@@ -333,7 +335,7 @@ export class TournamentsController {
         throw new UnauthorizedException('User not found');
       }
 
-      const groups = await this.tournamentsService.getUserGroups(user.id);
+      const groups = await this.tournamentsGroupService.getUserGroups(user.id);
 
       return groups.map((group) => ({
         id: group.id,
@@ -396,7 +398,10 @@ export class TournamentsController {
         throw new BadRequestException('Member not found');
       }
 
-      const group = await this.tournamentsService.findGroupById(groupId, true);
+      const group = await this.tournamentsGroupService.findGroupById(
+        groupId,
+        true,
+      );
 
       if (!group) {
         throw new BadRequestException('Group not found');
@@ -423,7 +428,7 @@ export class TournamentsController {
       }
 
       if (body.status === 'delete') {
-        await this.tournamentsService.deleteGroupMember(groupId, userId);
+        await this.tournamentsGroupService.deleteGroupMember(groupId, userId);
         console.log(
           'User with ID:',
           userId,
@@ -432,7 +437,7 @@ export class TournamentsController {
         return true;
       }
 
-      await this.tournamentsService.updateGroupMember(
+      await this.tournamentsGroupService.updateGroupMember(
         groupId,
         userId,
         body.status,
@@ -476,7 +481,10 @@ export class TournamentsController {
         throw new UnauthorizedException('User not found');
       }
 
-      const group = await this.tournamentsService.findGroupById(groupId, true);
+      const group = await this.tournamentsGroupService.findGroupById(
+        groupId,
+        true,
+      );
 
       if (!group) {
         throw new BadRequestException({
@@ -489,7 +497,11 @@ export class TournamentsController {
         throw new UnauthorizedException('You are not owner of this group');
       }
 
-      return this.tournamentsService.updateGroup(groupId, body.name, user.id);
+      return this.tournamentsGroupService.updateGroup(
+        groupId,
+        body.name,
+        user.id,
+      );
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
 
@@ -518,15 +530,19 @@ export class TournamentsController {
         throw new UnauthorizedException('User not found');
       }
 
-      const group = await this.tournamentsService.findGroupById(groupId, true);
+      const group = await this.tournamentsGroupService.findGroupById(
+        groupId,
+        true,
+      );
       if (user.id !== group?.owner_id) {
         throw new UnauthorizedException('You are not owner of this group');
       }
 
-      const newInviteCode = await this.tournamentsService.updateGroupInviteCode(
-        groupId,
-        user.id,
-      );
+      const newInviteCode =
+        await this.tournamentsGroupService.updateGroupInviteCode(
+          groupId,
+          user.id,
+        );
       return { inviteCode: newInviteCode };
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
@@ -555,7 +571,10 @@ export class TournamentsController {
       }
       console.log('group id:', groupId);
 
-      const group = await this.tournamentsService.findGroupById(groupId, true);
+      const group = await this.tournamentsGroupService.findGroupById(
+        groupId,
+        true,
+      );
 
       if (!group) {
         throw new BadRequestException({
@@ -611,7 +630,10 @@ export class TournamentsController {
       }
 
       /* Check if user is member of the group. */
-      const group = await this.tournamentsService.findGroupById(groupId, true);
+      const group = await this.tournamentsGroupService.findGroupById(
+        groupId,
+        true,
+      );
 
       if (!group) {
         throw new BadRequestException({
@@ -915,7 +937,7 @@ export class TournamentsController {
         throw new UnauthorizedException('User not found');
       }
 
-      await this.tournamentsService.deleteGroupByOwner(groupId, user.id);
+      await this.tournamentsGroupService.deleteGroupByOwner(groupId, user.id);
       console.log('Group was successfully deleted!');
       return true;
     } catch (e) {
@@ -952,7 +974,8 @@ export class TournamentsController {
         });
       }
 
-      const group = await this.tournamentsService.findGroupByInviteCode(code);
+      const group =
+        await this.tournamentsGroupService.findGroupByInviteCode(code);
 
       if (!group) {
         throw new BadRequestException({
@@ -964,7 +987,7 @@ export class TournamentsController {
       console.log('group:', group.id);
       console.log('user:', user.id);
 
-      const userFromGroup = await this.tournamentsService.findUserInGroup(
+      const userFromGroup = await this.tournamentsGroupService.findUserInGroup(
         group.id,
         user.id,
       );
@@ -976,7 +999,10 @@ export class TournamentsController {
         });
       }
 
-      await this.tournamentsService.addUserAsGroupMember(group.id, user.id);
+      await this.tournamentsGroupService.addUserAsGroupMember(
+        group.id,
+        user.id,
+      );
 
       await this.mailService.sendJoinToGroupRequestForCheck(
         group.owner.email,
@@ -1022,7 +1048,7 @@ export class TournamentsController {
         });
       }
 
-      const response = await this.tournamentsService.addNewGroup({
+      const response = await this.tournamentsGroupService.addNewGroup({
         name: body.name,
         tournamentId: Number(tournamentExternalId),
         seasonId: body.seasonExternalId,

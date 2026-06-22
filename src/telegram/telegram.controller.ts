@@ -4,6 +4,7 @@ import { TelegramService } from './telegram.service';
 import type { TelegramUpdate } from './telegram.types';
 import { UsersService } from '../users/users.service';
 import { TournamentsService } from '../tournaments/services/tournaments.service';
+import { TournamentsGroupService } from '../tournaments/services/tournaments_group.service';
 import { Group } from '../tournaments/entities/group.entity';
 import {
   GroupMemberNotificationSettingsData,
@@ -31,6 +32,7 @@ export class TelegramController {
     private readonly telegramService: TelegramService,
     private readonly usersService: UsersService,
     private readonly tournamentsService: TournamentsService,
+    private readonly tournamentsGroupService: TournamentsGroupService,
     private readonly tournamentsPredictionsService: TournamentsPredictionsService,
     private readonly tournamentNotificationService: TournamentNotificationService,
   ) {}
@@ -273,7 +275,7 @@ export class TelegramController {
       return;
     }
 
-    const groups = await this.tournamentsService.getUserGroups(
+    const groups = await this.tournamentsGroupService.getUserGroups(
       telegramAccount.user.id,
     );
 
@@ -354,7 +356,10 @@ export class TelegramController {
       return;
     }
 
-    const group = await this.tournamentsService.findGroupById(groupId, true);
+    const group = await this.tournamentsGroupService.findGroupById(
+      groupId,
+      true,
+    );
 
     if (!group) {
       await this.telegramService.sendMessage(
@@ -364,7 +369,7 @@ export class TelegramController {
       return;
     }
 
-    const membership = await this.tournamentsService.findUserInGroup(
+    const membership = await this.tournamentsGroupService.findUserInGroup(
       groupId,
       telegramAccount.user.id,
     );
