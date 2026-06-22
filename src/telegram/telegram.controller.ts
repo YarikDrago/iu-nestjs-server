@@ -3,8 +3,8 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import type { TelegramUpdate } from './telegram.types';
 import { UsersService } from '../users/users.service';
-import { TournamentsService } from '../tournaments/services/tournaments.service';
 import { TournamentsGroupService } from '../tournaments/services/tournaments_group.service';
+import { TournamentsMatchesService } from '../tournaments/services/tournaments_matches.service';
 import { Group } from '../tournaments/entities/group.entity';
 import {
   GroupMemberNotificationSettingsData,
@@ -31,8 +31,8 @@ export class TelegramController {
   constructor(
     private readonly telegramService: TelegramService,
     private readonly usersService: UsersService,
-    private readonly tournamentsService: TournamentsService,
     private readonly tournamentsGroupService: TournamentsGroupService,
+    private readonly tournamentsMatchesService: TournamentsMatchesService,
     private readonly tournamentsPredictionsService: TournamentsPredictionsService,
     private readonly tournamentNotificationService: TournamentNotificationService,
   ) {}
@@ -382,7 +382,7 @@ export class TelegramController {
       return;
     }
 
-    const matches = await this.tournamentsService.getCompetitionMatches(
+    const matches = await this.tournamentsMatchesService.getCompetitionMatches(
       group.tournament_id,
       group.season_id,
     );

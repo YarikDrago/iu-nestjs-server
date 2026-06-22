@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { TournamentsService } from './tournaments/services/tournaments.service';
+import { TournamentsMatchesService } from './tournaments/services/tournaments_matches.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,6 +25,7 @@ async function bootstrap() {
   console.log(`NestJS server running on http://localhost:${port}`);
 
   const tournamentsService = app.get(TournamentsService);
+  const tournamentsMatchesService = app.get(TournamentsMatchesService);
 
   // --- Serial job queue (one DB-heavy job at a time) ---
   let chain: Promise<void> = Promise.resolve();
@@ -53,7 +55,7 @@ async function bootstrap() {
 
     enqueue('updateMatchesOfCompetitions', async () => {
       try {
-        await tournamentsService.updateMatchesOfCompetitions();
+        await tournamentsMatchesService.updateMatchesOfCompetitions();
       } finally {
         matchesQueuedOrRunning = false;
       }

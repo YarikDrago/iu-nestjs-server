@@ -26,12 +26,14 @@ import { TournamentNotificationService } from './services/tournament_notificatio
 import { ManualUpdateMatchDto } from './dto/manual-update-match.dto';
 import { GroupMemberStatus } from './entities/group_members.entity';
 import { TournamentsGroupService } from './services/tournaments_group.service';
+import { TournamentsMatchesService } from './services/tournaments_matches.service';
 
 @Controller('tournaments')
 export class TournamentsController {
   constructor(
     private readonly tournamentsService: TournamentsService,
     private readonly tournamentsGroupService: TournamentsGroupService,
+    private readonly tournamentsMatchesService: TournamentsMatchesService,
     private readonly tournamentsPredictionsService: TournamentsPredictionsService,
     private readonly tournamentNotificationService: TournamentNotificationService,
     private readonly footballService: FootballService,
@@ -140,7 +142,7 @@ export class TournamentsController {
         });
       }
 
-      return await this.tournamentsService.getTournamentWithMatchesById(
+      return await this.tournamentsMatchesService.getTournamentWithMatchesById(
         tournamentId,
       );
     } catch (e) {
@@ -270,7 +272,7 @@ export class TournamentsController {
       this.authService.checkAccessTokenFromRequest(req);
       await this.authService.checkUserRolesByRequest(req, ['admin']);
 
-      await this.tournamentsService.updateMatchesOfCompetitions();
+      await this.tournamentsMatchesService.updateMatchesOfCompetitions();
       return true;
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
@@ -305,7 +307,7 @@ export class TournamentsController {
         });
       }
 
-      return await this.tournamentsService.manuallyUpdateMatch(
+      return await this.tournamentsMatchesService.manuallyUpdateMatch(
         parsedMatchId,
         body,
       );
@@ -646,10 +648,11 @@ export class TournamentsController {
         throw new UnauthorizedException('You are not member of this group');
       }
 
-      const matches = await this.tournamentsService.getCompetitionMatches(
-        group.tournament_id,
-        group.season_id,
-      );
+      const matches =
+        await this.tournamentsMatchesService.getCompetitionMatches(
+          group.tournament_id,
+          group.season_id,
+        );
 
       const predictions =
         await this.tournamentsPredictionsService.getGroupPredictions(groupId);

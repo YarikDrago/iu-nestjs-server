@@ -20,6 +20,7 @@ import { TournamentNotificationService } from './services/tournament_notificatio
 import { GroupMemberRoleNames } from './entities/group_member_role_names.entity';
 import { TelegramModule } from '../telegram/telegram.module';
 import { TournamentsGroupService } from './services/tournaments_group.service';
+import { TournamentsMatchesService } from './services/tournaments_matches.service';
 
 @Module({
   imports: [
@@ -44,12 +45,14 @@ import { TournamentsGroupService } from './services/tournaments_group.service';
   providers: [
     TournamentsService,
     TournamentsGroupService,
+    TournamentsMatchesService,
     TournamentsPredictionsService,
     TournamentNotificationService,
   ],
   exports: [
     TournamentsService,
     TournamentsGroupService,
+    TournamentsMatchesService,
     TournamentsPredictionsService,
     TournamentNotificationService,
   ],

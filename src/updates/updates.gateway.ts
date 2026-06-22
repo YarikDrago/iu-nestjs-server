@@ -9,8 +9,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { UpdatesService } from './updates.service';
 import { OnModuleInit } from '@nestjs/common';
-import { FootballMatchDto } from '../football/dto/football-match.dto';
-import { UpsertMatchInput } from '../tournaments/services/tournaments.service';
+import type { UpsertMatchInput } from '../tournaments/services/tournaments_matches.service';
 
 interface MatchPredictionUpdatePayload {
   /* Prediction ID */
