@@ -503,21 +503,6 @@ export class TournamentsMatchesService {
     return savedMatch;
   }
 
-  manualMatchChange(match: FootballMatchDto) {
-    const generateNewScore = () => {
-      const randomScore = Math.floor(Math.random() * 10);
-      return randomScore;
-    };
-    match.score.regularTime = {
-      home: generateNewScore(),
-      away: generateNewScore(),
-    };
-    match.score.extraTime = {
-      home: generateNewScore(),
-      away: generateNewScore(),
-    };
-  }
-
   private logChangedMatch(match: ChangedFootballMatchDto, dbMatch?: Matches) {
     const logData: Record<string, unknown> = {
       match: `${match.homeTeam.name || ''} - ${match.awayTeam.name || ''}`,
