@@ -15,7 +15,8 @@ import { GroupMemberNotificationSettings } from '../entities/group_member_notifi
 import { TournamentUserNotificationSettings } from '../entities/tournament_user_notification_settings.entity';
 import { Tournaments } from '../entities/tournament.entity';
 import { TelegramService } from '../../telegram/telegram.service';
-import { MatchStatus } from '../entities/matches.entity';
+import { Matches, MatchStatus } from '../entities/matches.entity';
+import { Predictions } from '../entities/predictions.entity';
 
 export type GroupMemberNotificationSettingsData = {
   groupMemberId: number;
@@ -51,6 +52,17 @@ export type MatchNotificationChange = {
   previousAwayScore?: number | null;
   homeScore?: number | null;
   awayScore?: number | null;
+};
+
+type PredictionReminderRaw = {
+  groupId: string;
+  groupName: string;
+  tournamentName: string;
+  matchId: string;
+  homeTeam: string | null;
+  awayTeam: string | null;
+  startTime: Date;
+  chatId: string | number;
 };
 
 @Injectable()
@@ -288,6 +300,80 @@ export class TournamentNotificationService {
     );
   }
 
+  async sendPredictionReminders() {
+    console.log('try to send prediction reminders');
+
+    const now = new Date();
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
+    const reminders = await this.groupMembersRepo
+      .createQueryBuilder('gm')
+      .innerJoin('gm.notificationSettings', 'settings')
+      .innerJoin('gm.group', 'g')
+      .innerJoin('g.tournament', 'tournament')
+      .innerJoin('gm.user', 'u')
+      .innerJoin('u.telegramAccounts', 'telegram')
+      .innerJoin(
+        Matches,
+        'm',
+        [
+          'm.tournament_id = g.tournament_id',
+          'm.season_id = g.season_id',
+          'm.start_time > :now',
+          'm.start_time <= :oneHourFromNow',
+        ].join(' AND '),
+      )
+      .leftJoin(
+        Predictions,
+        'prediction',
+        [
+          'prediction.user_id = gm.user_id',
+          'prediction.group_id = gm.group_id',
+          'prediction.match_id = m.id',
+        ].join(' AND '),
+      )
+      .where('gm.status = :status', { status: GroupMemberStatus.Verified })
+      .andWhere('settings.notifyPredictionReminder = :enabled', {
+        enabled: true,
+      })
+      .andWhere('telegram.chatId IS NOT NULL')
+      .andWhere('prediction.id IS NULL')
+      .setParameters({ now, oneHourFromNow })
+      .select([
+        'g.id AS groupId',
+        'g.name AS groupName',
+        'tournament.name AS tournamentName',
+        'm.id AS matchId',
+        'm.home_team AS homeTeam',
+        'm.away_team AS awayTeam',
+        'm.start_time AS startTime',
+        'telegram.chatId AS chatId',
+      ])
+      .getRawMany<PredictionReminderRaw>();
+
+    const uniqueReminders = this.uniquePredictionReminders(reminders);
+
+    const results = await Promise.allSettled(
+      uniqueReminders.map((reminder) =>
+        this.telegramService.sendMessage(
+          reminder.chatId,
+          this.formatPredictionReminderMessage(reminder),
+          {
+            parse_mode: 'HTML',
+          },
+        ),
+      ),
+    );
+
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        this.logger.warn(
+          `Failed to send prediction reminder to chat ${uniqueReminders[index].chatId}: ${String(result.reason)}`,
+        );
+      }
+    });
+  }
+
   private async notifyTournamentUsers(
     tournamentExternalId: number,
     settingKey: 'notifyMatchStatusChanged' | 'notifyMatchScoreChanged',
@@ -347,6 +433,41 @@ export class TournamentNotificationService {
       `<b>Match:</b> ${this.escapeHtml(change.homeTeam)} - ${this.escapeHtml(change.awayTeam)}`,
       `<b>Score:</b> <code>${this.formatScore(change.previousHomeScore, change.previousAwayScore)}</code> -> <code>${this.formatScore(change.homeScore, change.awayScore)}</code>`,
     ].join('\n');
+  }
+
+  private formatPredictionReminderMessage(reminder: PredictionReminderRaw) {
+    return [
+      '<b>Prediction reminder</b>',
+      `<b>Group:</b> ${this.escapeHtml(reminder.groupName)}`,
+      `<b>Tournament:</b> ${this.escapeHtml(reminder.tournamentName)}`,
+      `<b>Match:</b> ${this.escapeHtml(reminder.homeTeam ?? '')} - ${this.escapeHtml(reminder.awayTeam ?? '')}`,
+      `<b>Start:</b> ${this.escapeHtml(this.formatMatchStartTime(reminder.startTime))}`,
+      'Prediction is not set.',
+    ].join('\n');
+  }
+
+  private formatMatchStartTime(startTime: Date) {
+    const date = new Date(startTime);
+    const pad = (value: number) => String(value).padStart(2, '0');
+
+    return (
+      [pad(date.getDate()), pad(date.getMonth() + 1), date.getFullYear()].join(
+        '-',
+      ) + ` ${pad(date.getHours())}:${pad(date.getMinutes())}`
+    );
+  }
+
+  private uniquePredictionReminders(reminders: PredictionReminderRaw[]) {
+    const seen = new Set<string>();
+
+    return reminders.filter((reminder) => {
+      const key = [reminder.chatId, reminder.groupId, reminder.matchId].join(
+        ':',
+      );
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   private formatScore(homeScore?: number | null, awayScore?: number | null) {

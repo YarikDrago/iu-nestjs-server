@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { TournamentsService } from './tournaments/services/tournaments.service';
 import { TournamentsMatchesService } from './tournaments/services/tournaments_matches.service';
+import { TournamentNotificationService } from './tournaments/services/tournament_notification.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -26,6 +27,7 @@ async function bootstrap() {
 
   const tournamentsService = app.get(TournamentsService);
   const tournamentsMatchesService = app.get(TournamentsMatchesService);
+  const tournamentNotificationService = app.get(TournamentNotificationService);
 
   // --- Serial job queue (one DB-heavy job at a time) ---
   let chain: Promise<void> = Promise.resolve();
@@ -48,6 +50,7 @@ async function bootstrap() {
   // Coalesce flags: do not enqueue the same job again if it's already queued/running.
   let matchesQueuedOrRunning = false;
   let seasonsQueuedOrRunning = false;
+  let predictionRemindersQueuedOrRunning = false;
 
   const scheduleMatchesUpdate = (): void => {
     if (matchesQueuedOrRunning) return;
@@ -75,6 +78,20 @@ async function bootstrap() {
     });
   };
 
+  const schedulePredictionReminders = (): void => {
+    console.log('reminder start');
+    if (predictionRemindersQueuedOrRunning) return;
+    predictionRemindersQueuedOrRunning = true;
+
+    enqueue('sendPredictionReminders', async () => {
+      try {
+        await tournamentNotificationService.sendPredictionReminders();
+      } finally {
+        predictionRemindersQueuedOrRunning = false;
+      }
+    });
+  };
+
   // --- Timers (non-async callbacks => no-misused-promises) ---
   setInterval(() => {
     scheduleMatchesUpdate();
@@ -85,6 +102,13 @@ async function bootstrap() {
       scheduleSeasonsUpdate();
     },
     24 * 60 * 60 * 1000,
+  );
+
+  setInterval(
+    () => {
+      schedulePredictionReminders();
+    },
+    30 * 60 * 1000,
   );
 
   // Optionally kick off first runs on startup:
