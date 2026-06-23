@@ -21,7 +21,6 @@ import { GroupMemberStatus } from './entities/group_members.entity';
 import { TournamentsGroupService } from './services/tournaments_group.service';
 import { TournamentsMatchesService } from './services/tournaments_matches.service';
 import { TournamentsPredictionsService } from './services/tournaments_predictions.service';
-import { TournamentNotificationService } from './services/tournament_notification.service';
 
 @Controller('tournaments')
 export class TournamentGroupsController {
@@ -29,7 +28,6 @@ export class TournamentGroupsController {
     private readonly tournamentsGroupService: TournamentsGroupService,
     private readonly tournamentsMatchesService: TournamentsMatchesService,
     private readonly tournamentsPredictionsService: TournamentsPredictionsService,
-    private readonly tournamentNotificationService: TournamentNotificationService,
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
@@ -382,89 +380,6 @@ export class TournamentGroupsController {
         predictions: predictions,
         matches: matches,
       };
-    } catch (e) {
-      console.log('ERROR:', (e as Error).message);
-
-      if (e instanceof HttpException) {
-        throw e;
-      }
-
-      throw new HttpException(
-        (e as Error)?.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  @Get('groups/:groupId/notification-settings')
-  async getGroupMemberNotificationSettings(
-    @Req() req: Request,
-    @Param('groupId') groupId: number,
-  ) {
-    try {
-      console.log('try to get group member notification settings (controller)');
-      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
-      const user = await this.usersService.findUserByEmail(tokenPayload.email);
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      return await this.tournamentNotificationService.getGroupMemberNotificationSettings(
-        Number(groupId),
-        user.id,
-      );
-    } catch (e) {
-      console.log('ERROR:', (e as Error).message);
-
-      if (e instanceof HttpException) {
-        throw e;
-      }
-
-      throw new HttpException(
-        (e as Error)?.message || 'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  @Patch('groups/:groupId/notification-settings')
-  async updateGroupMemberNotificationSettings(
-    @Req() req: Request,
-    @Param('groupId') groupId: number,
-    @Body()
-    body: {
-      notifyPredictionReminder?: boolean;
-      notify_prediction_reminder?: boolean;
-    },
-  ) {
-    try {
-      console.log(
-        'try to update group member notification settings (controller)',
-      );
-      const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
-      const user = await this.usersService.findUserByEmail(tokenPayload.email);
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      const value =
-        body?.notifyPredictionReminder ?? body?.notify_prediction_reminder;
-
-      if (typeof value !== 'boolean') {
-        throw new BadRequestException({
-          message: 'notifyPredictionReminder must be boolean',
-          code: 'BAD_REQUEST',
-        });
-      }
-
-      return await this.tournamentNotificationService.updateGroupMemberNotificationSetting(
-        Number(groupId),
-        user.id,
-        'notifyPredictionReminder',
-        value,
-      );
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
 
