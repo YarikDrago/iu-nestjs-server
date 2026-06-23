@@ -23,7 +23,7 @@ export type GroupMemberNotificationSettingsData = {
   userId: number;
   memberStatus: GroupMemberStatus;
   notificationSettings: {
-    notifyPredictionChanged: boolean;
+    notifyPredictionReminder: boolean;
   };
   updatedAt: Date;
 };
@@ -118,7 +118,7 @@ export class TournamentNotificationService {
       userId: groupMember.user_id,
       memberStatus: groupMember.status,
       notificationSettings: {
-        notifyPredictionChanged: settings.notifyPredictionReminder,
+        notifyPredictionReminder: settings.notifyPredictionReminder,
       },
       updatedAt: settings.updatedAt,
     };

@@ -37,10 +37,13 @@ export class TournamentGroupNotificationsController {
         throw new UnauthorizedException('User not found');
       }
 
-      return await this.tournamentNotificationService.getGroupMemberNotificationSettings(
-        Number(groupId),
-        user.id,
-      );
+      const settings =
+        await this.tournamentNotificationService.getGroupMemberNotificationSettings(
+          Number(groupId),
+          user.id,
+        );
+
+      return settings.notificationSettings;
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
 

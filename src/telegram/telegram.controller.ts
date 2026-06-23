@@ -656,7 +656,7 @@ export class TelegramController {
     return [
       `<b>Group ID:</b> <code>${settings.groupId}</code>`,
       '<b>Notification settings:</b>',
-      `<b>Prediction changed:</b> <code>${this.formatNotificationSettingStatus(notificationSettings.notifyPredictionChanged)}</code>`,
+      `<b>Prediction changed:</b> <code>${this.formatNotificationSettingStatus(notificationSettings.notifyPredictionReminder)}</code>`,
     ].join('\n');
   }
 
