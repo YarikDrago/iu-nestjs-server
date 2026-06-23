@@ -2,6 +2,7 @@ import { TournamentsService } from './services/tournaments.service';
 import { forwardRef, Module } from '@nestjs/common';
 import { FootballModule } from '../football/football.module';
 import { TournamentsController } from './tournaments.controller';
+import { TournamentGroupsController } from './tournament-groups.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tournaments } from './entities/tournament.entity';
 import { AuthModule } from '../auth/auth.module';
@@ -56,6 +57,6 @@ import { TournamentsMatchesService } from './services/tournaments_matches.servic
     TournamentsPredictionsService,
     TournamentNotificationService,
   ],
-  controllers: [TournamentsController],
+  controllers: [TournamentGroupsController, TournamentsController],
 })
 export class TournamentsModule {}
