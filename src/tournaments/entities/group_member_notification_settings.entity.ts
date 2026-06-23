@@ -29,20 +29,6 @@ export class GroupMemberNotificationSettings {
   groupMember: GroupMembers;
 
   @Column({
-    name: 'notify_match_status_changed',
-    type: 'boolean',
-    default: false,
-  })
-  notifyMatchStatusChanged: boolean;
-
-  @Column({
-    name: 'notify_match_score_changed',
-    type: 'boolean',
-    default: false,
-  })
-  notifyMatchScoreChanged: boolean;
-
-  @Column({
     name: 'notify_prediction_reminder',
     type: 'boolean',
     default: false,

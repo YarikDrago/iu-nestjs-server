@@ -823,18 +823,18 @@ export class TournamentsController {
   }
 
   @Patch('groups/:groupId/notification-settings')
-  async updateNotifyMatchStatusChanged(
+  async updateGroupMemberNotificationSettings(
     @Req() req: Request,
     @Param('groupId') groupId: number,
     @Body()
     body: {
-      notifyMatchStatusChanged?: boolean;
-      notify_match_status_changed?: boolean;
+      notifyPredictionReminder?: boolean;
+      notify_prediction_reminder?: boolean;
     },
   ) {
     try {
       console.log(
-        'try to update notify match status changed setting (controller)',
+        'try to update group member notification settings (controller)',
       );
       const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
       const user = await this.usersService.findUserByEmail(tokenPayload.email);
@@ -844,11 +844,11 @@ export class TournamentsController {
       }
 
       const value =
-        body?.notifyMatchStatusChanged ?? body?.notify_match_status_changed;
+        body?.notifyPredictionReminder ?? body?.notify_prediction_reminder;
 
       if (typeof value !== 'boolean') {
         throw new BadRequestException({
-          message: 'notifyMatchStatusChanged must be boolean',
+          message: 'notifyPredictionReminder must be boolean',
           code: 'BAD_REQUEST',
         });
       }
@@ -856,7 +856,7 @@ export class TournamentsController {
       return await this.tournamentNotificationService.updateGroupMemberNotificationSetting(
         Number(groupId),
         user.id,
-        'notifyMatchStatusChanged',
+        'notifyPredictionReminder',
         value,
       );
     } catch (e) {

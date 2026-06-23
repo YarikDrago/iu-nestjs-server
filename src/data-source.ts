@@ -26,6 +26,7 @@ import { AlterMatchesStatusToEnum1781136000000 } from './migrations/178113600000
 import { AddHidePredictionsToMatches1781222400000 } from './migrations/1781222400000-AddHidePredictionsToMatches';
 import { CascadeGroupMemberNotificationSettings1781308800000 } from './migrations/1781308800000-CascadeGroupMemberNotificationSettings';
 import { AlterGroupMembersStatusToEnum1781395200000 } from './migrations/1781395200000-AlterGroupMembersStatusToEnum';
+import { RemoveMatchNotificationsFromGroupMemberSettings1781481600000 } from './migrations/1781481600000-RemoveMatchNotificationsFromGroupMemberSettings';
 
 export default new DataSource({
   type: 'mysql',
@@ -60,6 +61,7 @@ export default new DataSource({
     AddHidePredictionsToMatches1781222400000,
     CascadeGroupMemberNotificationSettings1781308800000,
     AlterGroupMembersStatusToEnum1781395200000,
+    RemoveMatchNotificationsFromGroupMemberSettings1781481600000,
   ],
   timezone: 'Z',
   // extra: {

@@ -23,17 +23,12 @@ export type GroupMemberNotificationSettingsData = {
   userId: number;
   memberStatus: GroupMemberStatus;
   notificationSettings: {
-    notifyMatchStatusChanged: boolean;
-    notifyMatchScoreChanged: boolean;
     notifyPredictionChanged: boolean;
   };
   updatedAt: Date;
 };
 
-export type GroupMemberNotificationSettingKey =
-  | 'notifyMatchStatusChanged'
-  | 'notifyMatchScoreChanged'
-  | 'notifyPredictionReminder';
+export type GroupMemberNotificationSettingKey = 'notifyPredictionReminder';
 
 export type TournamentUserNotificationSettingsData = {
   tournamentId: number;
@@ -123,8 +118,6 @@ export class TournamentNotificationService {
       userId: groupMember.user_id,
       memberStatus: groupMember.status,
       notificationSettings: {
-        notifyMatchStatusChanged: settings.notifyMatchStatusChanged,
-        notifyMatchScoreChanged: settings.notifyMatchScoreChanged,
         notifyPredictionChanged: settings.notifyPredictionReminder,
       },
       updatedAt: settings.updatedAt,
