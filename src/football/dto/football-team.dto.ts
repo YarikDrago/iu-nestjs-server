@@ -17,7 +17,7 @@ export class FootballTeamDto {
   @IsString()
   tla!: string | null;
 
-  // @IsString()
-  // @IsNotEmpty()
-  // crest!: string;
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  crest!: string | null;
 }

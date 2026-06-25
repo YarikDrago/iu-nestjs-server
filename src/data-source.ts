@@ -14,6 +14,8 @@ import { ResetPassword } from './auth/entities/reset_passowrd.entity';
 import { Tournaments } from './tournaments/entities/tournament.entity';
 import { Seasons } from './tournaments/entities/seasons.entity';
 import { Matches } from './tournaments/entities/matches.entity';
+import { Sports } from './tournaments/entities/sports.entity';
+import { Teams } from './tournaments/entities/teams.entity';
 import { Group } from './tournaments/entities/group.entity';
 import { GroupMembers } from './tournaments/entities/group_members.entity';
 import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_names.entity';
@@ -27,6 +29,7 @@ import { AddHidePredictionsToMatches1781222400000 } from './migrations/178122240
 import { CascadeGroupMemberNotificationSettings1781308800000 } from './migrations/1781308800000-CascadeGroupMemberNotificationSettings';
 import { AlterGroupMembersStatusToEnum1781395200000 } from './migrations/1781395200000-AlterGroupMembersStatusToEnum';
 import { RemoveMatchNotificationsFromGroupMemberSettings1781481600000 } from './migrations/1781481600000-RemoveMatchNotificationsFromGroupMemberSettings';
+import { CreateSportsAndTeams1781568000000 } from './migrations/1781568000000-CreateSportsAndTeams';
 
 export default new DataSource({
   type: 'mysql',
@@ -46,6 +49,8 @@ export default new DataSource({
     ResetPassword,
     Tournaments,
     Seasons,
+    Sports,
+    Teams,
     Matches,
     Group,
     GroupMembers,
@@ -62,6 +67,7 @@ export default new DataSource({
     CascadeGroupMemberNotificationSettings1781308800000,
     AlterGroupMembersStatusToEnum1781395200000,
     RemoveMatchNotificationsFromGroupMemberSettings1781481600000,
+    CreateSportsAndTeams1781568000000,
   ],
   timezone: 'Z',
   // extra: {

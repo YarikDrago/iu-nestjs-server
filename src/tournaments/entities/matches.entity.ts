@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Seasons } from './seasons.entity';
+import { Teams } from './teams.entity';
 import { Tournaments } from './tournament.entity';
 
 export enum MatchStatus {
@@ -44,8 +45,22 @@ export class Matches {
   @Column({ type: 'varchar', length: 255, nullable: true })
   home_team: string | null;
 
+  @Column({ name: 'home_team_id', type: 'bigint', nullable: true })
+  home_team_id: number | null;
+
+  @ManyToOne(() => Teams, (team) => team.home_matches, { nullable: true })
+  @JoinColumn({ name: 'home_team_id' })
+  home_team_entity: Teams | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   away_team: string | null;
+
+  @Column({ name: 'away_team_id', type: 'bigint', nullable: true })
+  away_team_id: number | null;
+
+  @ManyToOne(() => Teams, (team) => team.away_matches, { nullable: true })
+  @JoinColumn({ name: 'away_team_id' })
+  away_team_entity: Teams | null;
 
   @Column({ type: 'timestamp', nullable: true })
   start_time: Date | null;

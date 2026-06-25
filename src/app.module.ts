@@ -17,6 +17,8 @@ import { UserRoles } from './users/entities/user-roles.entity';
 import { UserRoleNames } from './users/entities/user-role-names.entity';
 import { Seasons } from './tournaments/entities/seasons.entity';
 import { Matches } from './tournaments/entities/matches.entity';
+import { Sports } from './tournaments/entities/sports.entity';
+import { Teams } from './tournaments/entities/teams.entity';
 import { UpdatesModule } from './updates/updates.module';
 import { Group } from './tournaments/entities/group.entity';
 import { GroupMembers } from './tournaments/entities/group_members.entity';
@@ -56,6 +58,8 @@ import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_n
         ResetPassword,
         Tournaments,
         Seasons, // Competition Seasons
+        Sports,
+        Teams,
         Matches, // All matches from competitions
         Group, // Groups for prediction tournaments
         GroupMembers,

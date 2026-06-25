@@ -10,6 +10,8 @@ import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { Seasons } from './entities/seasons.entity';
 import { Matches } from './entities/matches.entity';
+import { Sports } from './entities/sports.entity';
+import { Teams } from './entities/teams.entity';
 import { UpdatesModule } from '../updates/updates.module';
 import { Group } from './entities/group.entity';
 import { GroupMembers } from './entities/group_members.entity';
@@ -29,6 +31,8 @@ import { TournamentsMatchesService } from './services/tournaments_matches.servic
     TypeOrmModule.forFeature([
       Tournaments,
       Seasons,
+      Sports,
+      Teams,
       Matches,
       Group,
       GroupMembers,

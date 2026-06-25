@@ -12,6 +12,8 @@ import { ManualUpdateMatchDto } from '../dto/manual-update-match.dto';
 import { MatchResponseDto } from '../dto/match-response.dto';
 import { Matches, MatchStatus } from '../entities/matches.entity';
 import { Seasons } from '../entities/seasons.entity';
+import { Sports } from '../entities/sports.entity';
+import { Teams } from '../entities/teams.entity';
 import { Tournaments } from '../entities/tournament.entity';
 import {
   hasManualMatchUpdateKey,
@@ -29,7 +31,13 @@ export type UpsertMatchInput = {
   seasonExternalId: number;
   tournamentExternalId: number;
   homeTeam: string;
+  homeTeamShortName?: string | null;
+  homeTeamTla?: string | null;
+  homeTeamCrest?: string | null;
   awayTeam: string;
+  awayTeamShortName?: string | null;
+  awayTeamTla?: string | null;
+  awayTeamCrest?: string | null;
   startTime: Date | null;
   status: MatchStatus | null;
   homeScore: number | null;
@@ -59,6 +67,10 @@ export class TournamentsMatchesService {
     private readonly tournamentsRepo: Repository<Tournaments>,
     @InjectRepository(Seasons)
     private readonly seasonsRepo: Repository<Seasons>,
+    @InjectRepository(Sports)
+    private readonly sportsRepo: Repository<Sports>,
+    @InjectRepository(Teams)
+    private readonly teamsRepo: Repository<Teams>,
     @InjectRepository(Matches)
     private readonly matchesRepo: Repository<Matches>,
 
@@ -86,6 +98,10 @@ export class TournamentsMatchesService {
 
     const matches = await this.matchesRepo.find({
       where: { tournament_id: tournamentId, season_id: activeSeason.id },
+      relations: {
+        home_team_entity: true,
+        away_team_entity: true,
+      },
       order: {
         start_time: 'ASC',
         id: 'ASC',
@@ -277,6 +293,68 @@ export class TournamentsMatchesService {
       );
     }
 
+    const footballSport = await this.getOrCreateFootballSport();
+    const teamRows = inputs.flatMap((match) => [
+      {
+        name: match.homeTeam,
+        short_name: match.homeTeamShortName ?? null,
+        tla: match.homeTeamTla ?? null,
+        crest: match.homeTeamCrest ?? null,
+      },
+      {
+        name: match.awayTeam,
+        short_name: match.awayTeamShortName ?? null,
+        tla: match.awayTeamTla ?? null,
+        crest: match.awayTeamCrest ?? null,
+      },
+    ]);
+    const uniqueTeamRows = Array.from(
+      new Map(
+        teamRows.filter((team) => team.name).map((team) => [team.name, team]),
+      ).values(),
+    );
+
+    if (uniqueTeamRows.length > 0) {
+      const existingTeams = await this.teamsRepo.find({
+        where: {
+          sport_id: footballSport.id,
+          name: In(uniqueTeamRows.map((team) => team.name)),
+        },
+      });
+      const existingTeamByName = new Map<string, Teams>(
+        existingTeams.map((team) => [team.name, team]),
+      );
+
+      await this.teamsRepo.upsert(
+        uniqueTeamRows.map((team) => {
+          const existingTeam = existingTeamByName.get(team.name);
+
+          return {
+            sport_id: footballSport.id,
+            name: team.name,
+            short_name: team.short_name ?? existingTeam?.short_name ?? null,
+            tla: team.tla ?? existingTeam?.tla ?? null,
+            crest: team.crest ?? existingTeam?.crest ?? null,
+          };
+        }),
+        ['sport_id', 'name'],
+      );
+    }
+
+    const teams =
+      uniqueTeamRows.length > 0
+        ? await this.teamsRepo.find({
+            select: { id: true, sport_id: true, name: true },
+            where: {
+              sport_id: footballSport.id,
+              name: In(uniqueTeamRows.map((team) => team.name)),
+            },
+          })
+        : [];
+    const teamIdByName = new Map<string, number>(
+      teams.map((team) => [team.name, team.id]),
+    );
+
     const rows = inputs.map((match) => {
       const tournamentId = tournamentIdByExternal.get(
         match.tournamentExternalId,
@@ -300,7 +378,9 @@ export class TournamentsMatchesService {
         tournament_id: tournamentId,
         season_id: seasonId,
         home_team: match.homeTeam,
+        home_team_id: teamIdByName.get(match.homeTeam) ?? null,
         away_team: match.awayTeam,
+        away_team_id: teamIdByName.get(match.awayTeam) ?? null,
         start_time: match.startTime,
         status: match.status,
         home_score: match.homeScore,
@@ -354,7 +434,13 @@ export class TournamentsMatchesService {
           seasonExternalId: match.season.id,
           tournamentExternalId: match.competition.id,
           homeTeam: match.homeTeam.name || '',
+          homeTeamShortName: match.homeTeam.shortName,
+          homeTeamTla: match.homeTeam.tla,
+          homeTeamCrest: match.homeTeam.crest,
           awayTeam: match.awayTeam.name || '',
+          awayTeamShortName: match.awayTeam.shortName,
+          awayTeamTla: match.awayTeam.tla,
+          awayTeamCrest: match.awayTeam.crest,
           startTime: startTimeApi,
           status: statusApi,
           homeScore: match.homeScore,
@@ -387,6 +473,10 @@ export class TournamentsMatchesService {
     );
     const matches = this.matchesRepo.find({
       where: { tournament_id: competionId, season_id: seasonId },
+      relations: {
+        home_team_entity: true,
+        away_team_entity: true,
+      },
     });
 
     return (await matches).map((match) => this.toMatchResponseDto(match));
@@ -529,6 +619,18 @@ export class TournamentsMatchesService {
     }
 
     console.log('changed match:', logData);
+  }
+
+  private async getOrCreateFootballSport(): Promise<Sports> {
+    const existingSport = await this.sportsRepo.findOne({
+      where: { name: 'football' },
+    });
+
+    if (existingSport) {
+      return existingSport;
+    }
+
+    return this.sportsRepo.save({ name: 'football' });
   }
 
   private toMatchResponseDto(match: Matches): MatchResponseDto {
