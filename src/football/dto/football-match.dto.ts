@@ -10,7 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { FootballAreaDto } from './football-area.dto';
 import { FootballSeasonDto } from './football-season.dto';
-import { FootballTeamDto } from './football-team.dto';
+import { FootballMatchTeamDto } from './football-match-team.dto';
 import { FootballCompetitionMatchDto } from './football-competition-match.dto';
 import { MatchStatus } from '../../tournaments/entities/matches.entity';
 
@@ -80,12 +80,12 @@ export class FootballMatchDto {
   lastUpdated!: string;
 
   @ValidateNested()
-  @Type(() => FootballTeamDto)
-  homeTeam!: FootballTeamDto;
+  @Type(() => FootballMatchTeamDto)
+  homeTeam!: FootballMatchTeamDto;
 
   @ValidateNested()
-  @Type(() => FootballTeamDto)
-  awayTeam!: FootballTeamDto;
+  @Type(() => FootballMatchTeamDto)
+  awayTeam!: FootballMatchTeamDto;
 
   @ValidateNested()
   @Type(() => FootballScoreDto)

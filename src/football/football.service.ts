@@ -8,6 +8,7 @@ import { FootballCompetitionsDto } from './dto/football-competitions.dto';
 import { validate } from 'class-validator';
 import { FootballCompetitionMatchesDto } from './dto/football-competition-matches.dto';
 import { FootballCompetitionDto } from './dto/football-competition.dto';
+import { FootballCompetitionTeamsResponseDto } from './dto/football-competition-teams-response.dto';
 
 @Injectable()
 export class FootballService {
@@ -114,6 +115,13 @@ export class FootballService {
     );
   }
 
+  async getCompetitionTeams(competitionsIds: string[]) {
+    const uniqueIds = Array.from(new Set(competitionsIds)).filter(Boolean);
+    if (uniqueIds.length === 0) return [];
+
+    return Promise.all(uniqueIds.map((id) => this.getCompetitionTeamsById(id)));
+  }
+
   private async getCompetitionMatchesById(competitionId: string) {
     if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
     if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
@@ -150,6 +158,48 @@ export class FootballService {
     if (errors.length > 0) {
       throw new ServiceUnavailableException(
         `Football API returned invalid data (competitionId=${competitionId})`,
+      );
+    }
+
+    return dto;
+  }
+
+  private async getCompetitionTeamsById(competitionId: string) {
+    if (!process.env.FOOTBALL_API_TOKEN) throw new Error('No API token');
+    if (!process.env.FOOTBALL_API_URL) throw new Error('No API URL');
+
+    const response = await fetch(
+      `${process.env.FOOTBALL_API_URL}/competitions/${competitionId}/teams`,
+      {
+        method: 'GET',
+        headers: {
+          'X-Auth-Token': process.env.FOOTBALL_API_TOKEN,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => '');
+      this.logger.warn(
+        `Football API error (competitionId=${competitionId}): ${response.status} ${response.statusText}. Body: ${bodyText}`,
+      );
+      throw new ServiceUnavailableException(
+        `Football API responded with ${response.status} (competitionId=${competitionId})`,
+      );
+    }
+
+    const raw: unknown = await response.json();
+    const dto = plainToInstance(FootballCompetitionTeamsResponseDto, raw);
+
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      forbidUnknownValues: true,
+    });
+
+    if (errors.length > 0) {
+      throw new ServiceUnavailableException(
+        `Football API returned invalid teams data (competitionId=${competitionId})`,
       );
     }
 
