@@ -198,6 +198,10 @@ export class FootballService {
     });
 
     if (errors.length > 0) {
+      this.logger.warn(
+        `Football API teams payload validation failed (competitionId=${competitionId})`,
+      );
+      this.logger.warn(JSON.stringify(errors, null, 2));
       throw new ServiceUnavailableException(
         `Football API returned invalid teams data (competitionId=${competitionId})`,
       );

@@ -4,8 +4,8 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
-  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -21,9 +21,9 @@ class FootballTeamAreaDto {
   @IsNotEmpty()
   code!: string;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  flag!: string | null;
+  flag?: string | null;
 }
 
 class FootballTeamRunningCompetitionDto {
@@ -42,48 +42,50 @@ class FootballTeamRunningCompetitionDto {
   @IsNotEmpty()
   type!: string;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  emblem!: string | null;
+  emblem?: string | null;
 }
 
 class FootballTeamCoachContractDto {
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsDateString()
-  start!: string | null;
+  start?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsDateString()
-  until!: string | null;
+  until?: string | null;
 }
 
 class FootballTeamCoachDto {
+  @IsOptional()
   @IsInt()
-  id!: number;
+  id?: number | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  firstName!: string | null;
+  firstName?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  lastName!: string | null;
+  lastName?: string | null;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  name!: string;
+  name?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsDateString()
-  dateOfBirth!: string | null;
+  dateOfBirth?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  nationality!: string | null;
+  nationality?: string | null;
 
+  @IsOptional()
   @ValidateNested()
   @Type(() => FootballTeamCoachContractDto)
-  contract!: FootballTeamCoachContractDto;
+  contract?: FootballTeamCoachContractDto | null;
 }
 
 class FootballTeamSquadMemberDto {
@@ -94,17 +96,17 @@ class FootballTeamSquadMemberDto {
   @IsNotEmpty()
   name!: string;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  position!: string | null;
+  position?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsDateString()
-  dateOfBirth!: string | null;
+  dateOfBirth?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  nationality!: string | null;
+  nationality?: string | null;
 }
 
 export class FootballTeamDto {
@@ -119,58 +121,62 @@ export class FootballTeamDto {
   @IsNotEmpty()
   name!: string;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  shortName!: string | null;
+  shortName?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  tla!: string | null;
+  tla?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  crest!: string | null;
+  crest?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  address!: string | null;
+  address?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  website!: string | null;
+  website?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsInt()
-  founded!: number | null;
+  founded?: number | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  clubColors!: string | null;
+  clubColors?: string | null;
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @IsString()
-  venue!: string | null;
+  venue?: string | null;
 
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => FootballTeamRunningCompetitionDto)
-  runningCompetitions!: FootballTeamRunningCompetitionDto[];
+  runningCompetitions?: FootballTeamRunningCompetitionDto[];
 
-  @ValidateIf((_, value) => value !== null)
+  @IsOptional()
   @ValidateNested()
   @Type(() => FootballTeamCoachDto)
-  coach!: FootballTeamCoachDto | null;
+  coach?: FootballTeamCoachDto | null;
 
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => FootballTeamSquadMemberDto)
-  squad!: FootballTeamSquadMemberDto[];
+  squad?: FootballTeamSquadMemberDto[];
 
+  @IsOptional()
   @IsArray()
-  staff!: unknown[];
+  staff?: unknown[];
 
+  @IsOptional()
   @IsDateString()
-  lastUpdated!: string;
+  lastUpdated?: string;
 }
 
 export type FootballTeamListDto = FootballTeamDto[];
