@@ -19,6 +19,7 @@ interface MatchPredictionUpdatePayload {
   match_id: number;
   home_score: number;
   away_score: number;
+  predictionMade: boolean;
 }
 
 @WebSocketGateway({

@@ -14,6 +14,10 @@ import {
 } from '../entities/group_members.entity';
 import { UpdatesGateway } from '../../updates/updates.gateway';
 
+export type PredictionResponse = Predictions & {
+  predictionMade: boolean;
+};
+
 @Injectable()
 export class TournamentsPredictionsService {
   constructor(
@@ -26,14 +30,17 @@ export class TournamentsPredictionsService {
     private readonly updatesGateway: UpdatesGateway,
   ) {}
 
-  async getGroupPredictions(groupId: number) {
+  async getGroupPredictions(groupId: number): Promise<PredictionResponse[]> {
     console.log('try to get predictions for group:', groupId);
     const predictions = await this.predictionsRepo.find({
       where: { group_id: groupId },
       // relations: { match: true },
     });
     // console.log('predictions:', predictions);
-    return predictions;
+    return predictions.map((prediction) => ({
+      ...prediction,
+      predictionMade: true,
+    }));
   }
 
   async upsertPrediction(
@@ -89,6 +96,7 @@ export class TournamentsPredictionsService {
       match_id: matchId,
       home_score: homeScore,
       away_score: awayScore,
+      predictionMade: true,
     });
     // console.log('prediction upserted');
     return response;
