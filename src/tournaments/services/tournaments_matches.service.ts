@@ -43,6 +43,7 @@ export type UpsertMatchInput = {
   homeScore: number | null;
   awayScore: number | null;
   hidePredictions?: boolean;
+  manualUpdated?: boolean;
 };
 
 export type MatchChangeReason = 'status' | 'score' | 'other';
@@ -162,6 +163,10 @@ export class TournamentsMatchesService {
         };
         changedMatches.push(changedMatch);
         this.logChangedMatch(changedMatch);
+        continue;
+      }
+
+      if (dbMatch.manualUpdate === true) {
         continue;
       }
 
@@ -445,6 +450,7 @@ export class TournamentsMatchesService {
           status: statusApi,
           homeScore: match.homeScore,
           awayScore: match.awayScore,
+          manualUpdated: false,
         };
       });
     };
@@ -554,10 +560,11 @@ export class TournamentsMatchesService {
         homeScore: savedMatch.home_score,
         awayScore: savedMatch.away_score,
         hidePredictions: savedMatch.hide_predictions,
+        manualUpdated: savedMatch.manualUpdate,
       },
     ]);
 
-    return savedMatch;
+    return this.toMatchResponseDto(savedMatch);
   }
 
   private logChangedMatch(match: ChangedFootballMatchDto, dbMatch?: Matches) {
@@ -637,6 +644,7 @@ export class TournamentsMatchesService {
     return {
       ...match,
       hide_predictions: match.hide_predictions,
+      manualUpdated: match.manualUpdate,
     };
   }
 

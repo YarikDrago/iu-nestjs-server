@@ -12,6 +12,12 @@ export class ManualUpdateMatchDto {
   home_score?: number | null;
   awayScore?: number | null;
   away_score?: number | null;
+  //
   hidePredictions?: boolean;
   hide_predictions?: boolean;
+  //
+  manualUpdated?: boolean;
+  manualUpdate?: boolean;
+  manual_updated?: boolean;
+  manual_update?: boolean;
 }

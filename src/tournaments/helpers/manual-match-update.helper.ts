@@ -11,6 +11,7 @@ export type ManualMatchUpdate = {
   home_score?: number | null;
   away_score?: number | null;
   hide_predictions?: boolean;
+  manualUpdate?: boolean;
 };
 
 export function normalizeManualMatchUpdate(
@@ -67,6 +68,20 @@ export function normalizeManualMatchUpdate(
     );
   }
 
+  const manualUpdated = pickManualUpdateValue(
+    dto,
+    'manualUpdated',
+    'manualUpdate',
+    'manual_updated',
+    'manual_update',
+  );
+  if (manualUpdated.exists) {
+    update.manualUpdate = normalizeBoolean(
+      manualUpdated.value,
+      'manualUpdated',
+    );
+  }
+
   return update;
 }
 
@@ -80,14 +95,16 @@ export function hasManualMatchUpdateKey(
 function pickManualUpdateValue(
   dto: ManualUpdateMatchDto,
   primaryKey: keyof ManualUpdateMatchDto,
-  fallbackKey?: keyof ManualUpdateMatchDto,
+  ...fallbackKeys: (keyof ManualUpdateMatchDto)[]
 ): { exists: boolean; value: unknown } {
   if (Object.prototype.hasOwnProperty.call(dto, primaryKey)) {
     return { exists: true, value: dto[primaryKey] };
   }
 
-  if (fallbackKey && Object.prototype.hasOwnProperty.call(dto, fallbackKey)) {
-    return { exists: true, value: dto[fallbackKey] };
+  for (const fallbackKey of fallbackKeys) {
+    if (Object.prototype.hasOwnProperty.call(dto, fallbackKey)) {
+      return { exists: true, value: dto[fallbackKey] };
+    }
   }
 
   return { exists: false, value: undefined };

@@ -81,6 +81,13 @@ export class Matches {
   })
   hide_predictions: boolean;
 
+  @Column({
+    name: 'manualUpdate',
+    type: 'boolean',
+    default: false,
+  })
+  manualUpdate: boolean;
+
   @UpdateDateColumn({
     type: 'timestamp',
     default: () => 'TIMESTAMP',
