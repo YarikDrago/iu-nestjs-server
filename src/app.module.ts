@@ -32,6 +32,7 @@ import { UserTelegramAccounts } from './users/entities/user-telegram-accounts.en
 import { GroupMemberNotificationSettings } from './tournaments/entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from './tournaments/entities/tournament_user_notification_settings.entity';
 import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_names.entity';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_n
     UsersModule,
     AuthModule,
     TelegramModule,
+    HealthModule,
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,
