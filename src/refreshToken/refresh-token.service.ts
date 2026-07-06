@@ -59,13 +59,13 @@ export class RefreshTokenService {
       if (existing) {
         await this.refreshTokenRepository.update(
           { id: existing.id },
-          { token: refreshTokenHash },
+          { token_hash: refreshTokenHash },
         );
         return { success: true };
       } else {
         await this.refreshTokenRepository.save({
           user_id: userId,
-          token: refreshTokenHash,
+          token_hash: refreshTokenHash,
           created_at: new Date(),
           expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         });
@@ -81,7 +81,7 @@ export class RefreshTokenService {
     console.log('try to check refresh token (service):', refreshToken);
     const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
     const result = await this.refreshTokenRepository.findOne({
-      where: { token: refreshTokenHash },
+      where: { token_hash: refreshTokenHash },
       relations: { user: true }, // TODO make optional
     });
     if (!result) return false;
@@ -98,7 +98,7 @@ export class RefreshTokenService {
     console.log('try to revoke refresh token (service)');
     const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
     await this.refreshTokenRepository.update(
-      { token: refreshTokenHash },
+      { token_hash: refreshTokenHash },
       { revoked: true },
     );
   }
@@ -106,7 +106,7 @@ export class RefreshTokenService {
   async delete(refreshToken: string) {
     console.log('try to delete refresh token (service)');
     const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
-    await this.refreshTokenRepository.delete({ token: refreshTokenHash });
+    await this.refreshTokenRepository.delete({ token_hash: refreshTokenHash });
     return { success: true };
   }
 
