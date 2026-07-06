@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshToken } from './refresh-token.entity';
 import { Repository } from 'typeorm';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 
 export interface TokenPayload {
   email: string;
@@ -28,7 +28,7 @@ export class RefreshTokenService {
     );
 
     /* Generate random refresh token */
-    const refreshToken = Math.random().toString(36).substring(7);
+    const refreshToken = randomBytes(64).toString('hex');
 
     return {
       accessToken,
