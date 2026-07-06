@@ -86,11 +86,17 @@ export class AuthService {
     });
     console.log('new refresh token: ', tokens.refreshToken);
     console.log('new access token: ', tokens.accessToken);
-    /* Save a refresh token to the DB */
-    await this.refreshTokenService.save(check.user.id, tokens.refreshToken);
+    /* Save a new refresh token hash for the current session */
+    const session = await this.refreshTokenService.rotate(
+      check,
+      tokens.refreshToken,
+    );
     console.log('refresh token saved');
 
-    return tokens;
+    return {
+      ...tokens,
+      deviceId: session.deviceId,
+    };
   }
 
   writeTokensToCookies(
@@ -99,6 +105,7 @@ export class AuthService {
     res: Response,
     /* Set cookie to reset it after logout */
     resetCookie: boolean = false,
+    deviceId?: string,
   ) {
     const isProd = process.env.NODE_ENV === 'production';
 
@@ -115,6 +122,14 @@ export class AuthService {
       secure: isProd,
       sameSite: isProd ? 'none' : 'lax',
       maxAge: resetCookie ? 0 : 7 * 24 * 60 * 60 * 1000, // 7d (подстрой под свою политику)
+      path: '/',
+    });
+
+    res.cookie('deviceId', deviceId ?? '', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: resetCookie ? 0 : 30 * 24 * 60 * 60 * 1000, // 30d
       path: '/',
     });
   }

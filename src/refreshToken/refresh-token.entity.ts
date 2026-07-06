@@ -26,8 +26,20 @@ export class RefreshToken {
   @Column({ name: 'token_hash' })
   token_hash: string;
 
+  @Column({ name: 'device_id', type: 'varchar', length: 36, nullable: true })
+  device_id: string | null;
+
+  @Column({ name: 'user_agent', type: 'text', nullable: true })
+  user_agent: string | null;
+
+  @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
+  ip_address: string | null;
+
   @Column({ name: 'created_at', type: 'timestamp' })
   created_at: Date;
+
+  @Column({ name: 'last_used_at', type: 'timestamp', nullable: true })
+  last_used_at: Date | null;
 
   @Column({ name: 'expired_at', type: 'timestamp' })
   expired_at: Date;

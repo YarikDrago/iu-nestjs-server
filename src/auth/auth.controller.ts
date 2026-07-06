@@ -36,6 +36,7 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() dto: LoginUserDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
@@ -86,13 +87,23 @@ export class AuthController {
       });
       console.log('tokens generated:', tokens);
       /* Save a refresh token to the DB */
-      await this.refreshTokenService.save(user.id, tokens.refreshToken);
+      const session = await this.refreshTokenService.save(
+        user.id,
+        tokens.refreshToken,
+        {
+          deviceId: this.getDeviceId(req),
+          userAgent: this.getUserAgent(req),
+          ipAddress: this.getClientIp(req),
+        },
+      );
       console.log('refresh token saved');
 
       this.authService.writeTokensToCookies(
         tokens.accessToken,
         tokens.refreshToken,
         res,
+        false,
+        session.deviceId,
       );
 
       return {
@@ -291,6 +302,8 @@ export class AuthController {
         result.accessToken,
         result.refreshToken,
         res,
+        false,
+        result.deviceId,
       );
 
       return true;
@@ -482,5 +495,36 @@ export class AuthController {
     }
     this.authService.deleteAccessTokenFromCookies(res);
     return 'Access token deleted';
+  }
+
+  private getUserAgent(req: Request): string | null {
+    return req.headers['user-agent'] ?? null;
+  }
+
+  private getDeviceId(req: Request): string | undefined {
+    const rawCookieHeader = req.headers.cookie ?? '';
+    const cookies = cookie.parse(rawCookieHeader);
+    const deviceId = cookies['deviceId'];
+
+    if (!deviceId) return undefined;
+
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    return uuidPattern.test(deviceId) ? deviceId : undefined;
+  }
+
+  private getClientIp(req: Request): string | null {
+    const forwardedFor = req.headers['x-forwarded-for'];
+
+    if (typeof forwardedFor === 'string' && forwardedFor.length > 0) {
+      return forwardedFor.split(',')[0].trim();
+    }
+
+    if (Array.isArray(forwardedFor) && forwardedFor.length > 0) {
+      return forwardedFor[0];
+    }
+
+    return req.ip ?? req.socket.remoteAddress ?? null;
   }
 }

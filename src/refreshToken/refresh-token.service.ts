@@ -3,11 +3,19 @@ import jwt from 'jsonwebtoken';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshToken } from './refresh-token.entity';
 import { Repository } from 'typeorm';
-import { createHmac, randomBytes } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
+
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export interface TokenPayload {
   email: string;
   nickname: string;
+}
+
+export interface SaveRefreshTokenOptions {
+  deviceId?: string;
+  userAgent?: string | null;
+  ipAddress?: string | null;
 }
 
 @Injectable()
@@ -42,39 +50,74 @@ export class RefreshTokenService {
       .digest('hex');
   }
 
-  async save(userId: number, refreshToken: string) {
+  private createRefreshTokenExpirationDate() {
+    return new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+  }
+
+  async save(
+    userId: number,
+    refreshToken: string,
+    options: SaveRefreshTokenOptions = {},
+  ) {
     try {
       console.log('try to save refresh token (service)');
       const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
+      const deviceId = options.deviceId ?? randomUUID();
       console.log('refreshTokenHash:', refreshTokenHash);
-      /* First, we try to find such a token in the database.
-       * If the user is already logged in and is trying to log in from another device,
-       * the token will be overwritten and the user will be kicked off the first device.
-       * It is worth remembering that spent tokens must be deleted from the database
-       * in order not to clog the database. */
+
       const existing = await this.refreshTokenRepository.findOne({
-        where: { user: { id: userId } },
+        where: { user_id: userId, device_id: deviceId },
       });
 
       if (existing) {
         await this.refreshTokenRepository.update(
           { id: existing.id },
-          { token_hash: refreshTokenHash },
+          {
+            token_hash: refreshTokenHash,
+            user_agent: options.userAgent ?? null,
+            ip_address: options.ipAddress ?? null,
+            last_used_at: new Date(),
+            expired_at: this.createRefreshTokenExpirationDate(),
+            revoked: false,
+          },
         );
-        return { success: true };
       } else {
         await this.refreshTokenRepository.save({
           user_id: userId,
           token_hash: refreshTokenHash,
+          device_id: deviceId,
+          user_agent: options.userAgent ?? null,
+          ip_address: options.ipAddress ?? null,
           created_at: new Date(),
-          expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          last_used_at: new Date(),
+          expired_at: this.createRefreshTokenExpirationDate(),
+          revoked: false,
         });
-        return { success: true };
       }
+
+      return { success: true, deviceId };
     } catch (e) {
       console.log('error:', e);
       throw new Error('Error saving refresh token');
     }
+  }
+
+  async rotate(tokenRecord: RefreshToken, refreshToken: string) {
+    const refreshTokenHash = this.createRefreshTokenHash(refreshToken);
+    const deviceId = tokenRecord.device_id ?? randomUUID();
+
+    await this.refreshTokenRepository.update(
+      { id: tokenRecord.id },
+      {
+        token_hash: refreshTokenHash,
+        device_id: deviceId,
+        last_used_at: new Date(),
+        expired_at: this.createRefreshTokenExpirationDate(),
+        revoked: false,
+      },
+    );
+
+    return { success: true, deviceId };
   }
 
   async check(refreshToken: string) {

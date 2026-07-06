@@ -32,6 +32,7 @@ import { RemoveMatchNotificationsFromGroupMemberSettings1781481600000 } from './
 import { CreateSportsAndTeams1781568000000 } from './migrations/1781568000000-CreateSportsAndTeams';
 import { AddManualUpdateToMatches1781654400000 } from './migrations/1781654400000-AddManualUpdateToMatches';
 import { RenameRefreshTokenTokenToTokenHash1781740800000 } from './migrations/1781740800000-RenameRefreshTokenTokenToTokenHash';
+import { AddRefreshTokenSessionMetadata1781827200000 } from './migrations/1781827200000-AddRefreshTokenSessionMetadata';
 
 export default new DataSource({
   type: 'mysql',
@@ -72,6 +73,7 @@ export default new DataSource({
     CreateSportsAndTeams1781568000000,
     AddManualUpdateToMatches1781654400000,
     RenameRefreshTokenTokenToTokenHash1781740800000,
+    AddRefreshTokenSessionMetadata1781827200000,
   ],
   timezone: 'Z',
   // extra: {
