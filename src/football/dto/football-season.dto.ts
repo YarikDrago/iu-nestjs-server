@@ -1,4 +1,4 @@
-import { IsDateString, IsInt, IsOptional } from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsUrl } from 'class-validator';
 
 export class FootballSeasonDto {
   @IsInt()
@@ -13,6 +13,10 @@ export class FootballSeasonDto {
   @IsOptional()
   @IsInt()
   currentMatchday?: number;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  emblem?: string | null;
 
   // @ValidateIf((_, value) => value !== null && value !== undefined)
   // @IsString()

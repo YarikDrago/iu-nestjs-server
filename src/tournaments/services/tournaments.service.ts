@@ -14,6 +14,7 @@ export type UpsertSeasonInput = {
   tournamentId: number;
   startDate: Date;
   endDate: Date;
+  emblem?: string | null;
   isCurrent?: boolean;
 };
 
@@ -117,6 +118,7 @@ export class TournamentsService {
           tournamentId: tournamentsGlossary[competition.id],
           startDate: new Date(season.startDate),
           endDate: new Date(season.endDate),
+          emblem: season.emblem ?? competition.emblem ?? null,
           isCurrent: currentSeasonId === season.id,
         };
         preparedSeasons.push(preparedSeason);
@@ -135,12 +137,26 @@ export class TournamentsService {
     if (inputs.length === 0)
       return { identifiers: [], generatedMaps: [], raw: [] };
 
+    const existingSeasons = await this.seasonsRepo.find({
+      select: { external_id: true, emblem: true },
+      where: { external_id: In(inputs.map((input) => input.externalId)) },
+    });
+    const existingEmblemByExternalId = new Map(
+      existingSeasons
+        .filter((season) => season.emblem)
+        .map((season) => [season.external_id, season.emblem]),
+    );
+
     return this.seasonsRepo.upsert(
       inputs.map((input) => ({
         external_id: input.externalId,
         tournament_id: input.tournamentId,
         start_date: input.startDate,
         end_date: input.endDate,
+        emblem:
+          existingEmblemByExternalId.get(input.externalId) ??
+          input.emblem ??
+          null,
         is_current: input.isCurrent ?? false,
       })),
       ['external_id'],

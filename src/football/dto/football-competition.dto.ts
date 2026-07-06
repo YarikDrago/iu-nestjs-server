@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUrl,
   ValidateNested,
 } from 'class-validator';
 import { FootballAreaDto } from './football-area.dto';
@@ -30,9 +31,9 @@ export class FootballCompetitionDto {
   @IsNotEmpty()
   type!: string;
 
-  // @IsOptional()
-  // @IsUrl({ require_tld: false })
-  // emblem?: string;
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  emblem?: string;
 
   @ValidateNested()
   @Type(() => FootballSeasonDto)

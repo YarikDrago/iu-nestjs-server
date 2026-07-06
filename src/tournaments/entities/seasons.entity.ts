@@ -31,6 +31,9 @@ export class Seasons {
   @Column({ type: 'date' })
   end_date: Date;
 
+  @Column({ type: 'varchar', length: 2048, nullable: true })
+  emblem: string | null;
+
   @Column({ type: 'boolean', default: false })
   is_current: boolean;
 
