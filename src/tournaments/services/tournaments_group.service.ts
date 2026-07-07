@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'node:crypto';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Group } from '../entities/group.entity';
 import {
   GroupMembers,
@@ -106,19 +106,19 @@ export class TournamentsGroupService {
 
   async getUserGroups(userId: number): Promise<Group[]> {
     console.log('try to get my groups (service)', userId);
-    /* Get groups where the user is owner or verified member. */
-    const userInGroups = await this.groupMembersRepo.find({
-      // TODO replace hardcoded value with constant
-      where: { user_id: userId, status: GroupMemberStatus.Verified },
-      relations: { group: true },
-    });
-    console.log('userInGroups:', userInGroups);
-    /* Get groups by their IDs. */
-    const groupIds = userInGroups.map((g) => g.group_id);
-    return await this.groupRepo.find({
-      where: { id: In(groupIds) },
-      relations: { tournament: true, season: true },
-    });
+
+    return this.groupRepo
+      .createQueryBuilder('group')
+      .innerJoin(
+        GroupMembers,
+        'member',
+        'member.group_id = group.id AND member.user_id = :userId AND member.status = :status',
+        { userId, status: GroupMemberStatus.Verified },
+      )
+      .leftJoinAndSelect('group.tournament', 'tournament')
+      .leftJoinAndSelect('group.season', 'season')
+      .orderBy('group.created_at', 'DESC')
+      .getMany();
   }
 
   async deleteGroupByOwner(groupId: number, userId: number) {
