@@ -14,3 +14,21 @@ export function parseMatchStatus(
 
   throw new BadRequestException(`Unknown match status: ${status}`);
 }
+
+export function resolveAutomaticMatchStatus(
+  apiStatus: MatchStatus | null,
+  dbStatus: MatchStatus | null,
+): MatchStatus | null {
+  if (dbStatus === MatchStatus.FINISHED) {
+    return dbStatus;
+  }
+
+  if (
+    dbStatus === MatchStatus.IN_PLAY &&
+    (apiStatus === MatchStatus.SCHEDULED || apiStatus === MatchStatus.TIMED)
+  ) {
+    return dbStatus;
+  }
+
+  return apiStatus;
+}

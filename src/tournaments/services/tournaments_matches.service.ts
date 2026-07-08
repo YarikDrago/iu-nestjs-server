@@ -23,7 +23,10 @@ import {
   calculateMatchScore,
   getMaxScoreValue,
 } from '../helpers/match-score.helper';
-import { parseMatchStatus } from '../helpers/match-status.helper';
+import {
+  parseMatchStatus,
+  resolveAutomaticMatchStatus,
+} from '../helpers/match-status.helper';
 import { TournamentNotificationService } from './tournament_notification.service';
 
 export type UpsertMatchInput = {
@@ -55,6 +58,8 @@ export type ChangedFootballMatchDto = FootballMatchDto & {
   previousStatus: MatchStatus | null;
   previousHomeScore: number | null;
   previousAwayScore: number | null;
+  apiStatus: MatchStatus | null;
+  resolvedStatus: MatchStatus | null;
   apiHomeScore: number | null;
   apiAwayScore: number | null;
   homeScore: number | null;
@@ -156,6 +161,8 @@ export class TournamentsMatchesService {
           previousStatus: null,
           previousHomeScore: null,
           previousAwayScore: null,
+          apiStatus: statusApi,
+          resolvedStatus: statusApi,
           apiHomeScore,
           apiAwayScore,
           homeScore: apiHomeScore,
@@ -172,7 +179,11 @@ export class TournamentsMatchesService {
 
       const homeScore = getMaxScoreValue(apiHomeScore, dbMatch.home_score);
       const awayScore = getMaxScoreValue(apiAwayScore, dbMatch.away_score);
-      const isStatusChanged = (dbMatch.status ?? null) !== statusApi;
+      const resolvedStatus = resolveAutomaticMatchStatus(
+        statusApi,
+        dbMatch.status ?? null,
+      );
+      const isStatusChanged = (dbMatch.status ?? null) !== resolvedStatus;
       const isHomeTeamChanged = (dbMatch.home_team || '') !== homeTeamApi;
       const isAwayTeamChanged = (dbMatch.away_team || '') !== awayTeamApi;
       const isHomeScoreChanged = (dbMatch.home_score ?? null) !== homeScore;
@@ -210,6 +221,8 @@ export class TournamentsMatchesService {
         previousStatus: dbMatch.status ?? null,
         previousHomeScore: dbMatch.home_score ?? null,
         previousAwayScore: dbMatch.away_score ?? null,
+        apiStatus: statusApi,
+        resolvedStatus,
         apiHomeScore,
         apiAwayScore,
         homeScore,
@@ -431,7 +444,6 @@ export class TournamentsMatchesService {
       matches: ChangedFootballMatchDto[],
     ): UpsertMatchInput[] => {
       return matches.map((match) => {
-        const statusApi = parseMatchStatus(match.status);
         const startTimeApi = new Date(match.utcDate);
 
         return {
@@ -447,7 +459,7 @@ export class TournamentsMatchesService {
           awayTeamTla: match.awayTeam.tla,
           awayTeamCrest: match.awayTeam.crest,
           startTime: startTimeApi,
-          status: statusApi,
+          status: match.resolvedStatus,
           homeScore: match.homeScore,
           awayScore: match.awayScore,
           manualUpdated: false,
@@ -592,7 +604,8 @@ export class TournamentsMatchesService {
     } else if (match.changeReason === 'status') {
       logData.status = {
         db: dbMatch?.status ?? null,
-        api: match.status || '',
+        api: match.apiStatus,
+        resolvedForDb: match.resolvedStatus,
       };
     } else {
       logData.fields = {
@@ -612,7 +625,10 @@ export class TournamentsMatchesService {
           homeTeam: match.homeTeam.name || '',
           awayTeam: match.awayTeam.name || '',
           startTime: new Date(match.utcDate),
-          status: match.status || '',
+          status: {
+            api: match.apiStatus,
+            resolvedForDb: match.resolvedStatus,
+          },
           scoreCalculated: {
             home: match.apiHomeScore,
             away: match.apiAwayScore,
@@ -656,7 +672,7 @@ export class TournamentsMatchesService {
         homeTeam: match.homeTeam.name || '',
         awayTeam: match.awayTeam.name || '',
         previousStatus: match.previousStatus,
-        status: parseMatchStatus(match.status),
+        status: match.resolvedStatus,
         previousHomeScore: match.previousHomeScore,
         previousAwayScore: match.previousAwayScore,
         homeScore: match.homeScore,
