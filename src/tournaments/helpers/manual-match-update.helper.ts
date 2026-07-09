@@ -28,12 +28,12 @@ export function normalizeManualMatchUpdate(
 
   const homeTeam = pickManualUpdateValue(dto, 'homeTeam', 'home_team');
   if (homeTeam.exists) {
-    update.home_team = normalizeNullableString(homeTeam.value, 'homeTeam');
+    update.home_team = normalizeNullableTeamName(homeTeam.value, 'homeTeam');
   }
 
   const awayTeam = pickManualUpdateValue(dto, 'awayTeam', 'away_team');
   if (awayTeam.exists) {
-    update.away_team = normalizeNullableString(awayTeam.value, 'awayTeam');
+    update.away_team = normalizeNullableTeamName(awayTeam.value, 'awayTeam');
   }
 
   const startTime = pickManualUpdateValue(dto, 'startTime', 'start_time');
@@ -98,12 +98,18 @@ function pickManualUpdateValue(
   ...fallbackKeys: (keyof ManualUpdateMatchDto)[]
 ): { exists: boolean; value: unknown } {
   if (Object.prototype.hasOwnProperty.call(dto, primaryKey)) {
-    return { exists: true, value: dto[primaryKey] };
+    const value = dto[primaryKey];
+    if (value !== undefined) {
+      return { exists: true, value };
+    }
   }
 
   for (const fallbackKey of fallbackKeys) {
     if (Object.prototype.hasOwnProperty.call(dto, fallbackKey)) {
-      return { exists: true, value: dto[fallbackKey] };
+      const value = dto[fallbackKey];
+      if (value !== undefined) {
+        return { exists: true, value };
+      }
     }
   }
 
@@ -125,6 +131,21 @@ function normalizeNullableString(value: unknown, fieldName: string) {
   }
 
   return trimmedValue;
+}
+
+function normalizeNullableTeamName(value: unknown, fieldName: string) {
+  if (
+    value &&
+    typeof value === 'object' &&
+    Object.prototype.hasOwnProperty.call(value, 'name')
+  ) {
+    return normalizeNullableString(
+      (value as { name?: unknown }).name,
+      `${fieldName}.name`,
+    );
+  }
+
+  return normalizeNullableString(value, fieldName);
 }
 
 function normalizeNullableDate(value: unknown, fieldName: string) {
