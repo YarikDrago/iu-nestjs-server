@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { TournamentsService } from './tournaments/services/tournaments.service';
 import { TournamentsMatchesService } from './tournaments/services/tournaments_matches.service';
@@ -8,6 +9,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Разрешаем запросы с Next.js
   app.enableCors({

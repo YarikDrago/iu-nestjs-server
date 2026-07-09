@@ -33,6 +33,7 @@ import { GroupMemberNotificationSettings } from './tournaments/entities/group_me
 import { TournamentUserNotificationSettings } from './tournaments/entities/tournament_user_notification_settings.entity';
 import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_names.entity';
 import { HealthModule } from './health/health.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     TelegramModule,
     HealthModule,
+    MailModule,
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,

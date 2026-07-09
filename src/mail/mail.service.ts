@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import nodemailer, { Transporter } from 'nodemailer';
+import { ContactMessageDto } from './dto/contact-message.dto';
 
 @Injectable()
 export class MailService {
@@ -36,6 +37,36 @@ export class MailService {
       console.error('sendTestMail failed:', e);
       throw e;
     }
+  }
+
+  async sendContactMessage({ email, message, topic }: ContactMessageDto) {
+    const recipient = process.env.SMTP_TEST_EMAIL;
+
+    if (!recipient) {
+      throw new InternalServerErrorException('SMTP_TEST_EMAIL is not configured');
+    }
+
+    const safeTopic = this.sanitizeHeaderValue(topic);
+    const safeMessage = this.sanitizePlainText(message);
+    const subject = safeTopic
+      ? `[IU] Contact message: ${safeTopic}`
+      : '[IU] Contact message';
+
+    await this.transporter.sendMail({
+      from: `${process.env.SMTP_MAIL_TITLE} <${process.env.SMTP_USER}>`,
+      to: recipient,
+      replyTo: email,
+      subject,
+      text: [
+        `From: ${email}`,
+        `Topic: ${safeTopic ?? 'undefined'}`,
+        '',
+        'Message:',
+        safeMessage,
+      ].join('\n'),
+    });
+
+    return true;
   }
 
   async sendActivationLink(to: string, link: string) {
@@ -193,5 +224,19 @@ export class MailService {
                 </div>
             `,
     });
+  }
+
+  private sanitizeHeaderValue(value?: string) {
+    if (!value) return undefined;
+
+    return value.replace(/[\r\n]/g, ' ').replace(/\p{C}/gu, '').trim();
+  }
+
+  private sanitizePlainText(value: string) {
+    return value
+      .replace(/\r\n?/g, '\n')
+      .replace(/[^\S\n\t]+/g, ' ')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+      .trim();
   }
 }
