@@ -1,23 +1,23 @@
 import {
   Body,
   Controller,
-  Get,
   HttpException,
   HttpStatus,
   Post,
 } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { ContactMessageDto } from './dto/contact-message.dto';
+import { TestMessageDto } from './dto/test-message.st';
 
 @Controller('mail')
 export class MailController {
   constructor(private readonly mailService: MailService) {}
 
-  @Get('test')
-  async testMail() {
+  @Post('test')
+  async testMail(@Body() body: TestMessageDto) {
     try {
       console.log('try to send email');
-      await this.mailService.sendTestMail();
+      await this.mailService.sendTestMail(body);
       return { success: true, message: 'Email sent successfully' };
     } catch (e) {
       console.log('ERROR:', (e as Error).message);

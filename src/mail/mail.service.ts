@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import nodemailer, { Transporter } from 'nodemailer';
 import { ContactMessageDto } from './dto/contact-message.dto';
+import { TestMessageDto } from './dto/test-message.st';
 
 @Injectable()
 export class MailService {
@@ -23,12 +24,18 @@ export class MailService {
     );
   }
 
-  async sendTestMail() {
+  async sendTestMail(body: TestMessageDto) {
     console.log('try to send email (service mail)');
+    const email = body.email || process.env.SMTP_TEST_EMAIL;
+    if (!email) {
+      throw new InternalServerErrorException(
+        'SMTP_TEST_EMAIL is not configured',
+      );
+    }
     try {
       await this.transporter.sendMail({
         from: `${process.env.SMTP_MAIL_TITLE} <${process.env.SMTP_USER}>`,
-        to: `${process.env.SMTP_TEST_EMAIL}`,
+        to: email,
         subject: '[IU] test message',
         text: 'This is a simple message to test work of the SMTP',
       });
