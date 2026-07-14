@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Word } from './word.entity';
+import { Word } from '../../vocabulary/entities/word.entity';
 
 @Entity({ name: 'languages' })
 export class Language {

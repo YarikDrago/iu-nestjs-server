@@ -34,8 +34,9 @@ import { TournamentUserNotificationSettings } from './tournaments/entities/tourn
 import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_names.entity';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
-import { Language } from './vocabulary/entities/language.entity';
+import { Language } from './languages/entities/language.entity';
 import { Word } from './vocabulary/entities/word.entity';
+import { LanguagesModule } from './languages/languages.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { Word } from './vocabulary/entities/word.entity';
     TelegramModule,
     HealthModule,
     MailModule,
+    LanguagesModule,
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,

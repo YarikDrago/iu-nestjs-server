@@ -22,7 +22,7 @@ import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_n
 import { GroupMemberNotificationSettings } from './tournaments/entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from './tournaments/entities/tournament_user_notification_settings.entity';
 import { Predictions } from './tournaments/entities/predictions.entity';
-import { Language } from './vocabulary/entities/language.entity';
+import { Language } from './languages/entities/language.entity';
 import { Word } from './vocabulary/entities/word.entity';
 // import { InitialSchema1780963200000 } from './migrations/1780963200000-InitialSchema';
 import { CreateGroupMemberRoleNames1781049600000 } from './migrations/1781049600000-CreateGroupMemberRoleNames';

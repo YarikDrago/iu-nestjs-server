@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Language } from './language.entity';
+import { Language } from '../../languages/entities/language.entity';
 
 @Entity({ name: 'words' })
 @Index(
