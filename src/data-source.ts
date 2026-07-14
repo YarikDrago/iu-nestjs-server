@@ -22,6 +22,8 @@ import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_n
 import { GroupMemberNotificationSettings } from './tournaments/entities/group_member_notification_settings.entity';
 import { TournamentUserNotificationSettings } from './tournaments/entities/tournament_user_notification_settings.entity';
 import { Predictions } from './tournaments/entities/predictions.entity';
+import { Language } from './vocabulary/entities/language.entity';
+import { Word } from './vocabulary/entities/word.entity';
 // import { InitialSchema1780963200000 } from './migrations/1780963200000-InitialSchema';
 import { CreateGroupMemberRoleNames1781049600000 } from './migrations/1781049600000-CreateGroupMemberRoleNames';
 import { AlterMatchesStatusToEnum1781136000000 } from './migrations/1781136000000-AlterMatchesStatusToEnum';
@@ -34,6 +36,7 @@ import { AddManualUpdateToMatches1781654400000 } from './migrations/178165440000
 import { RenameRefreshTokenTokenToTokenHash1781740800000 } from './migrations/1781740800000-RenameRefreshTokenTokenToTokenHash';
 import { AddRefreshTokenSessionMetadata1781827200000 } from './migrations/1781827200000-AddRefreshTokenSessionMetadata';
 import { AddEmblemToSeasons1781913600000 } from './migrations/1781913600000-AddEmblemToSeasons';
+import { CreateLanguageAndWordDictionaries1782000000000 } from './migrations/1782000000000-CreateLanguageAndWordDictionaries';
 
 export default new DataSource({
   type: 'mysql',
@@ -62,6 +65,8 @@ export default new DataSource({
     GroupMemberNotificationSettings,
     TournamentUserNotificationSettings,
     Predictions,
+    Language,
+    Word,
   ],
   migrations: [
     // InitialSchema1780963200000, // TODO run this migration after FIFA
@@ -76,6 +81,7 @@ export default new DataSource({
     RenameRefreshTokenTokenToTokenHash1781740800000,
     AddRefreshTokenSessionMetadata1781827200000,
     AddEmblemToSeasons1781913600000,
+    CreateLanguageAndWordDictionaries1782000000000,
   ],
   timezone: 'Z',
   // extra: {

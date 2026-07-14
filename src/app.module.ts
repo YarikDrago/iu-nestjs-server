@@ -34,6 +34,8 @@ import { TournamentUserNotificationSettings } from './tournaments/entities/tourn
 import { GroupMemberRoleNames } from './tournaments/entities/group_member_role_names.entity';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
+import { Language } from './vocabulary/entities/language.entity';
+import { Word } from './vocabulary/entities/word.entity';
 
 @Module({
   imports: [
@@ -69,6 +71,8 @@ import { MailModule } from './mail/mail.module';
         GroupMemberNotificationSettings,
         TournamentUserNotificationSettings,
         Predictions,
+        Language,
+        Word,
       ],
       // synchronize: true, // WARNING!
       timezone: 'Z',
