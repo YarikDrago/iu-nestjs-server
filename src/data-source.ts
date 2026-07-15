@@ -37,6 +37,7 @@ import { RenameRefreshTokenTokenToTokenHash1781740800000 } from './migrations/17
 import { AddRefreshTokenSessionMetadata1781827200000 } from './migrations/1781827200000-AddRefreshTokenSessionMetadata';
 import { AddEmblemToSeasons1781913600000 } from './migrations/1781913600000-AddEmblemToSeasons';
 import { CreateLanguageAndWordDictionaries1782000000000 } from './migrations/1782000000000-CreateLanguageAndWordDictionaries';
+import { SeedLanguages1782086400000 } from './migrations/1782086400000-SeedLanguages';
 
 export default new DataSource({
   type: 'mysql',
@@ -82,6 +83,7 @@ export default new DataSource({
     AddRefreshTokenSessionMetadata1781827200000,
     AddEmblemToSeasons1781913600000,
     CreateLanguageAndWordDictionaries1782000000000,
+    SeedLanguages1782086400000,
   ],
   timezone: 'Z',
   // extra: {
