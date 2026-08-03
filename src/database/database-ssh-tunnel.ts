@@ -1,4 +1,4 @@
-import { spawn, ChildProcess } from 'node:child_process';
+import { ChildProcess, spawn } from 'node:child_process';
 import * as net from 'node:net';
 import * as path from 'node:path';
 
@@ -97,7 +97,11 @@ async function startDatabaseSshTunnel(): Promise<TunnelConfig> {
     }
   });
 
-  await waitForPort(config.localHost, config.localPort, 10_000);
+  await waitForPort(
+    config.localHost,
+    config.localPort,
+    parseTimeout(process.env.DB_SSH_CONNECT_TIMEOUT_MS ?? '30000'),
+  );
   return config;
 }
 
@@ -169,4 +173,13 @@ function parsePort(value: string | undefined, name: string): number {
   }
 
   return port;
+}
+
+function parseTimeout(value: string): number {
+  const timeoutMs = Number.parseInt(value, 10);
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
+    throw new Error('DB_SSH_CONNECT_TIMEOUT_MS must be a positive integer');
+  }
+
+  return timeoutMs;
 }
