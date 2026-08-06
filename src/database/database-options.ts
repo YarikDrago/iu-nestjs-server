@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { DataSourceOptions } from 'typeorm';
 import { ResetPassword } from '../auth/entities/reset_passowrd.entity';
 import { Language } from '../languages/entities/language.entity';
+import { ProductType } from '../products/entities/product-type.entity';
 import { RefreshToken } from '../refreshToken/refresh-token.entity';
 import { Group } from '../tournaments/entities/group.entity';
 import { GroupMemberNotificationSettings } from '../tournaments/entities/group_member_notification_settings.entity';
@@ -56,6 +57,7 @@ export async function createDatabaseOptions(): Promise<DataSourceOptions> {
       Predictions,
       Language,
       Word,
+      ProductType,
     ],
     timezone: 'Z',
     ssl: process.env.DB_SSL_CA

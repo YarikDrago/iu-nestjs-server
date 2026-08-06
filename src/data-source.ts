@@ -15,6 +15,7 @@ import { AddRefreshTokenSessionMetadata1781827200000 } from './migrations/178182
 import { AddEmblemToSeasons1781913600000 } from './migrations/1781913600000-AddEmblemToSeasons';
 import { CreateLanguageAndWordDictionaries1782000000000 } from './migrations/1782000000000-CreateLanguageAndWordDictionaries';
 import { SeedLanguages1782086400000 } from './migrations/1782086400000-SeedLanguages';
+import { CreateProductTypes1782172800000 } from './migrations/1782172800000-CreateProductTypes';
 import { createDatabaseOptions } from './database/database-options';
 
 export default createDatabaseOptions().then(
@@ -36,6 +37,7 @@ export default createDatabaseOptions().then(
         AddEmblemToSeasons1781913600000,
         CreateLanguageAndWordDictionaries1782000000000,
         SeedLanguages1782086400000,
+        CreateProductTypes1782172800000,
       ],
       // extra: {
       //   initSql: "SET time_zone = '+00:00'",
