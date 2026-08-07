@@ -15,6 +15,7 @@ import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
 import { LanguagesModule } from './languages/languages.module';
 import { createDatabaseOptions } from './database/database-options';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { createDatabaseOptions } from './database/database-options';
     HealthModule,
     MailModule,
     LanguagesModule,
+    ProductsModule,
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,
