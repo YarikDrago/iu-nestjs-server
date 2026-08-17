@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import {
 } from 'typeorm';
 import { Tournaments } from './tournament.entity';
 
+@Index('UQ_seasons_external_id', ['external_id'], { unique: true })
 @Entity({ name: 'seasons' })
 export class Seasons {
   @PrimaryGeneratedColumn({ type: 'bigint' })

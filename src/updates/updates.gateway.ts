@@ -31,13 +31,13 @@ interface MatchPredictionUpdatePayload {
 })
 export class UpdatesGateway implements OnGatewayConnection, OnModuleInit {
   @WebSocketServer()
-  private readonly server!: Server;
+  private server?: Server;
 
   constructor(private readonly updatesService: UpdatesService) {}
 
   onModuleInit() {
     this.updatesService.lastUpdateAt.subscribe((lastUpdateAt) => {
-      this.server.emit('lastUpdate', { lastUpdateAt });
+      this.server?.emit('lastUpdate', { lastUpdateAt });
     });
   }
 
@@ -72,7 +72,7 @@ export class UpdatesGateway implements OnGatewayConnection, OnModuleInit {
     const timestamp = new Date().toISOString();
     console.log('Send group prediction update');
     // TODO rename to group:prediction:update
-    this.server.to(`group-${payload.group_id}`).emit('group:test', payload);
+    this.server?.to(`group-${payload.group_id}`).emit('group:test', payload);
     console.log(
       'Sent group:test to room',
       `group-${payload.group_id}`,
@@ -82,6 +82,6 @@ export class UpdatesGateway implements OnGatewayConnection, OnModuleInit {
   }
 
   sendMatchesUpdate(matches: UpsertMatchInput[]) {
-    this.server.emit('matches', matches);
+    this.server?.emit('matches', matches);
   }
 }

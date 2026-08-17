@@ -1,7 +1,14 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { MaxLength } from 'class-validator';
 import { Seasons } from './seasons.entity';
 
+@Index('UQ_tournaments_external_id', ['external_id'], { unique: true })
 @Entity({ name: 'tournaments' })
 export class Tournaments {
   @PrimaryGeneratedColumn()
