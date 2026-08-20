@@ -22,6 +22,7 @@ import { UserRoles } from '../users/entities/user-roles.entity';
 import { UserStatus } from '../users/entities/user-status.entity';
 import { UserTelegramAccounts } from '../users/entities/user-telegram-accounts.entity';
 import { User } from '../users/entities/user.entity';
+import { Concept } from '../vocabulary/entities/concept.entity';
 import { Word } from '../vocabulary/entities/word.entity';
 import { ensureDatabaseSshTunnel } from './database-ssh-tunnel';
 
@@ -57,6 +58,7 @@ export async function createDatabaseOptions(): Promise<DataSourceOptions> {
       Predictions,
       Language,
       Word,
+      Concept,
       ProductType,
     ],
     timezone: 'Z',
