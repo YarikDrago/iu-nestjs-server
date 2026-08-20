@@ -11,6 +11,12 @@ export class LanguagesService {
     private readonly languageRepository: Repository<Language>,
   ) {}
 
+  async getLanguages(): Promise<Language[]> {
+    return await this.languageRepository.find({
+      order: { name: 'ASC' },
+    });
+  }
+
   async createLanguage(dto: CreateLanguageDto): Promise<Language> {
     const existingLanguage = await this.languageRepository.findOne({
       where: { code: dto.code },
