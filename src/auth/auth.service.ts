@@ -47,7 +47,7 @@ export class AuthService {
   }
 
   checkAccessTokenFromRequest(req: Request): TokenPayload {
-    const accessToken = this.getCookieOrThrow(req, 'accessToken');
+    const accessToken = this.getAccessTokenFromRequest(req);
     return this.checkAccessToken(accessToken);
   }
 
@@ -242,5 +242,16 @@ export class AuthService {
     }
 
     return value;
+  }
+
+  private getAccessTokenFromRequest(req: Request): string {
+    const authorization = req.headers.authorization;
+    const bearerPrefix = 'Bearer ';
+
+    if (authorization?.startsWith(bearerPrefix)) {
+      return authorization.slice(bearerPrefix.length).trim();
+    }
+
+    return this.getCookieOrThrow(req, 'accessToken');
   }
 }
