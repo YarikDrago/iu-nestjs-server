@@ -8,7 +8,10 @@ import { VocabularyService } from './vocabulary.service';
 describe('VocabularyController', () => {
   let authService: Pick<AuthService, 'checkAccessTokenFromRequest'>;
   let usersService: Pick<UsersService, 'findUserByEmail'>;
-  let vocabularyService: Pick<VocabularyService, 'createUserVocabularyItem'>;
+  let vocabularyService: Pick<
+    VocabularyService,
+    'createUserVocabularyItem' | 'getUserVocabularyItems'
+  >;
   let controller: VocabularyController;
 
   beforeEach(() => {
@@ -20,11 +23,71 @@ describe('VocabularyController', () => {
     };
     vocabularyService = {
       createUserVocabularyItem: jest.fn(),
+      getUserVocabularyItems: jest.fn(),
     };
     controller = new VocabularyController(
       vocabularyService as VocabularyService,
       authService as AuthService,
       usersService as UsersService,
+    );
+  });
+
+  it('gets vocabulary items for the authenticated user', async () => {
+    jest.mocked(authService.checkAccessTokenFromRequest).mockReturnValueOnce({
+      email: 'user@example.com',
+      nickname: 'user',
+    });
+    jest.mocked(usersService.findUserByEmail).mockResolvedValueOnce({
+      id: 10,
+      email: 'user@example.com',
+      nickname: 'user',
+    } as never);
+    jest
+      .mocked(vocabularyService.getUserVocabularyItems)
+      .mockResolvedValueOnce([
+        {
+          id: 1,
+          userId: 10,
+          conceptId: 2,
+          sourceLanguageId: 1,
+          targetLanguageId: 2,
+          status: UserVocabularyItemStatus.Active,
+          concept: {
+            id: 2,
+            status: 'private' as never,
+            primaryWordId: 3,
+            words: [],
+            images: [],
+          },
+        },
+      ]);
+
+    const query = {
+      sourceLanguageId: 1,
+      targetLanguageId: 2,
+      status: UserVocabularyItemStatus.Active,
+    };
+
+    await expect(controller.getMyItems({} as never, query)).resolves.toEqual([
+      {
+        id: 1,
+        userId: 10,
+        conceptId: 2,
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+        status: UserVocabularyItemStatus.Active,
+        concept: {
+          id: 2,
+          status: 'private',
+          primaryWordId: 3,
+          words: [],
+          images: [],
+        },
+      },
+    ]);
+    expect(vocabularyService.getUserVocabularyItems).toHaveBeenCalledWith(
+      10,
+      query,
     );
   });
 

@@ -1,8 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, FindOptionsWhere, Repository } from 'typeorm';
 import { Language } from '../languages/entities/language.entity';
 import { CreateUserVocabularyItemDto } from './dto/create-user-vocabulary-item.dto';
+import { GetUserVocabularyItemsDto } from './dto/get-user-vocabulary-items.dto';
 import {
   ConceptImage,
   ConceptImageStatus,
@@ -59,6 +60,59 @@ export class VocabularyService {
     @InjectRepository(UserVocabularyItem)
     private readonly userVocabularyItemRepository: Repository<UserVocabularyItem>,
   ) {}
+
+  async getUserVocabularyItems(
+    userId: number,
+    query: GetUserVocabularyItemsDto,
+  ): Promise<UserVocabularyItemResponse[]> {
+    if (
+      query.sourceLanguageId !== undefined &&
+      query.targetLanguageId !== undefined &&
+      query.sourceLanguageId === query.targetLanguageId
+    ) {
+      throw new BadRequestException(
+        'Source and target languages must be different',
+      );
+    }
+
+    const where: FindOptionsWhere<UserVocabularyItem> = {
+      user_id: userId,
+    };
+
+    if (query.sourceLanguageId !== undefined) {
+      where.source_language_id = query.sourceLanguageId;
+    }
+
+    if (query.targetLanguageId !== undefined) {
+      where.target_language_id = query.targetLanguageId;
+    }
+
+    if (query.status !== undefined) {
+      where.status = query.status;
+    }
+
+    const items = await this.userVocabularyItemRepository.find({
+      where,
+      relations: {
+        concept: {
+          concept_words: {
+            word: true,
+          },
+          images: true,
+        },
+      },
+      order: { created_at: 'DESC' },
+    });
+
+    return items.map((item) =>
+      this.toUserVocabularyItemResponse({
+        item,
+        concept: item.concept,
+        words: this.getSortedConceptWords(item),
+        images: this.getVisibleConceptImages(item.concept.images ?? [], userId),
+      }),
+    );
+  }
 
   async createUserVocabularyItem(
     userId: number,
@@ -208,6 +262,37 @@ export class VocabularyService {
 
   private normalizeWordText(text: string): string {
     return text.trim().toLowerCase();
+  }
+
+  private getSortedConceptWords(item: UserVocabularyItem): Word[] {
+    const words =
+      item.concept?.concept_words
+        ?.map((conceptWord) => conceptWord.word)
+        .filter((word): word is Word => !!word) ?? [];
+
+    return words.sort((a, b) => {
+      const getPriority = (word: Word) => {
+        if (word.language_id === item.source_language_id) return 0;
+        if (word.language_id === item.target_language_id) return 1;
+        return 2;
+      };
+
+      const priorityDiff = getPriority(a) - getPriority(b);
+      if (priorityDiff !== 0) return priorityDiff;
+
+      return a.text.localeCompare(b.text);
+    });
+  }
+
+  private getVisibleConceptImages(
+    images: ConceptImage[],
+    userId: number,
+  ): ConceptImage[] {
+    return images.filter(
+      (image) =>
+        image.status === ConceptImageStatus.Verified ||
+        Number(image.created_by_user_id) === Number(userId),
+    );
   }
 
   private toUserVocabularyItemResponse(input: {

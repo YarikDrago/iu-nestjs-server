@@ -134,12 +134,20 @@ class InMemoryVocabularyManager {
 
 describe('VocabularyService', () => {
   let manager: InMemoryVocabularyManager;
+  let userVocabularyItemRepository: {
+    manager: InMemoryVocabularyManager;
+    find: jest.Mock;
+  };
   let service: VocabularyService;
 
   beforeEach(() => {
     manager = new InMemoryVocabularyManager();
     manager.seedLanguage(1, 'ru');
     manager.seedLanguage(2, 'en');
+    userVocabularyItemRepository = {
+      manager,
+      find: jest.fn(),
+    };
 
     service = new VocabularyService(
       {} as never,
@@ -147,8 +155,129 @@ describe('VocabularyService', () => {
       {} as never,
       {} as never,
       {} as never,
-      { manager } as never,
+      userVocabularyItemRepository as never,
     );
+  });
+
+  it('gets user vocabulary items with optional filters', async () => {
+    const item = {
+      id: 100,
+      user_id: 10,
+      concept_id: 200,
+      source_language_id: 1,
+      target_language_id: 2,
+      status: UserVocabularyItemStatus.Active,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        primary_word_id: 301,
+        concept_words: [
+          {
+            word: {
+              id: 301,
+              language_id: 2,
+              text: 'Cool',
+            },
+          },
+          {
+            word: {
+              id: 300,
+              language_id: 1,
+              text: 'РљР»РµРІС‹Р№',
+            },
+          },
+        ],
+        images: [
+          {
+            id: 400,
+            image_url: 'https://example.com/own.jpg',
+            is_primary: true,
+            status: ConceptImageStatus.Private,
+            created_by_user_id: 10,
+          },
+          {
+            id: 401,
+            image_url: 'https://example.com/hidden.jpg',
+            is_primary: false,
+            status: ConceptImageStatus.Pending,
+            created_by_user_id: 20,
+          },
+          {
+            id: 402,
+            image_url: 'https://example.com/verified.jpg',
+            is_primary: false,
+            status: ConceptImageStatus.Verified,
+            created_by_user_id: 20,
+          },
+        ],
+      },
+    } as UserVocabularyItem;
+    userVocabularyItemRepository.find.mockResolvedValueOnce([item]);
+
+    await expect(
+      service.getUserVocabularyItems(10, {
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+        status: UserVocabularyItemStatus.Active,
+      }),
+    ).resolves.toEqual([
+      {
+        id: 100,
+        userId: 10,
+        conceptId: 200,
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+        status: UserVocabularyItemStatus.Active,
+        concept: {
+          id: 200,
+          status: ConceptStatus.Private,
+          primaryWordId: 301,
+          words: [
+            { id: 300, languageId: 1, text: 'РљР»РµРІС‹Р№' },
+            { id: 301, languageId: 2, text: 'Cool' },
+          ],
+          images: [
+            {
+              id: 400,
+              imageUrl: 'https://example.com/own.jpg',
+              isPrimary: true,
+            },
+            {
+              id: 402,
+              imageUrl: 'https://example.com/verified.jpg',
+              isPrimary: false,
+            },
+          ],
+        },
+      },
+    ]);
+    expect(userVocabularyItemRepository.find).toHaveBeenCalledWith({
+      where: {
+        user_id: 10,
+        source_language_id: 1,
+        target_language_id: 2,
+        status: UserVocabularyItemStatus.Active,
+      },
+      relations: {
+        concept: {
+          concept_words: {
+            word: true,
+          },
+          images: true,
+        },
+      },
+      order: { created_at: 'DESC' },
+    });
+  });
+
+  it('rejects equal source and target language filters', async () => {
+    await expect(
+      service.getUserVocabularyItems(10, {
+        sourceLanguageId: 1,
+        targetLanguageId: 1,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(userVocabularyItemRepository.find).not.toHaveBeenCalled();
   });
 
   it('creates a private concept with two concept words and a user vocabulary item', async () => {
