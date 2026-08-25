@@ -160,14 +160,19 @@ export class AuthController {
   }
 
   @Get('check-access-token')
-  checkAccessToken(@Req() req: Request) {
+  checkAccessToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    this.setAuthNoStoreHeaders(res);
     console.log('try to check access token');
     this.authService.checkAccessTokenFromRequest(req);
     return true;
   }
 
   @Get('me')
-  async me(@Req() req: Request) {
+  async me(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    this.setAuthNoStoreHeaders(res);
     console.log('try to get user data (controller)');
     const tokenPayload = this.authService.checkAccessTokenFromRequest(req);
     const email = tokenPayload.email;
@@ -258,7 +263,11 @@ export class AuthController {
   }
 
   @Get('check-refresh-token')
-  async checkRefreshToken(@Req() req: Request) {
+  async checkRefreshToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    this.setAuthNoStoreHeaders(res);
     console.log('try to check refresh token');
     const rawCookieHeader = req.headers.cookie ?? '';
     const cookies = cookie.parse(rawCookieHeader);
@@ -286,6 +295,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
+      this.setAuthNoStoreHeaders(res);
       console.log('try to refresh tokens');
       const rawCookieHeader = req.headers.cookie ?? '';
       const cookies = cookie.parse(rawCookieHeader);
@@ -499,6 +509,16 @@ export class AuthController {
 
   private getUserAgent(req: Request): string | null {
     return req.headers['user-agent'] ?? null;
+  }
+
+  private setAuthNoStoreHeaders(res: Response) {
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate',
+    );
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
   }
 
   private getDeviceId(req: Request): string | undefined {
