@@ -15,10 +15,16 @@ import { UserVocabularyItem } from './user-vocabulary-item.entity';
 import { Word } from './word.entity';
 
 export enum ConceptStatus {
+  /** Personal concept created by a user; not visible in the shared dictionary. */
   Private = 'private',
+  /** Submitted for admin review; still usable by the author. */
   Pending = 'pending',
+  /** Admin-approved canonical concept visible in the shared dictionary. */
   Verified = 'verified',
+  /** Rejected for the shared dictionary; still may remain usable by the author. */
   Rejected = 'rejected',
+  /** Duplicate concept merged into another canonical concept. */
+  Merged = 'merged',
 }
 
 @Entity({ name: 'concepts' })
@@ -59,6 +65,16 @@ export class Concept {
 
   @Column({ type: 'varchar', length: 1000, nullable: true })
   rejection_reason: string | null;
+
+  @Column({ name: 'merged_into_concept_id', type: 'bigint', nullable: true })
+  merged_into_concept_id: number | null;
+
+  @ManyToOne(() => Concept, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'merged_into_concept_id' })
+  merged_into_concept: Concept | null;
+
+  @OneToMany(() => Concept, (concept) => concept.merged_into_concept)
+  merged_concepts: Concept[];
 
   @OneToMany(() => ConceptWord, (conceptWord) => conceptWord.concept)
   concept_words: ConceptWord[];
