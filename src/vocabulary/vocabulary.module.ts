@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { Language } from '../languages/entities/language.entity';
+import { UsersModule } from '../users/users.module';
 import { ConceptImage } from './entities/concept-image.entity';
 import { ConceptWord } from './entities/concept-word.entity';
 import { Concept } from './entities/concept.entity';
@@ -21,6 +22,7 @@ import { VocabularyService } from './vocabulary.service';
       UserVocabularyItem,
     ]),
     AuthModule,
+    UsersModule,
   ],
   controllers: [VocabularyController],
   providers: [VocabularyService],
