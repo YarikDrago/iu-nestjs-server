@@ -16,6 +16,7 @@ import { MailModule } from './mail/mail.module';
 import { LanguagesModule } from './languages/languages.module';
 import { createDatabaseOptions } from './database/database-options';
 import { ProductsModule } from './products/products.module';
+import { VocabularyModule } from './vocabulary/vocabulary.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ProductsModule } from './products/products.module';
     HealthModule,
     MailModule,
     LanguagesModule,
+    VocabularyModule,
     ProductsModule,
     RefreshTokenModule,
     FootballModule,

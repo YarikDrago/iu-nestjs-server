@@ -4,13 +4,18 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { ConceptImage } from './concept-image.entity';
+import { ConceptWord } from './concept-word.entity';
+import { UserVocabularyItem } from './user-vocabulary-item.entity';
 import { Word } from './word.entity';
 
 export enum ConceptStatus {
+  Private = 'private',
   Pending = 'pending',
   Verified = 'verified',
   Rejected = 'rejected',
@@ -38,7 +43,7 @@ export class Concept {
   @Column({
     type: 'enum',
     enum: ConceptStatus,
-    default: ConceptStatus.Pending,
+    default: ConceptStatus.Private,
   })
   status: ConceptStatus;
 
@@ -51,6 +56,21 @@ export class Concept {
 
   @Column({ type: 'timestamp', nullable: true })
   verified_at: Date | null;
+
+  @Column({ type: 'varchar', length: 1000, nullable: true })
+  rejection_reason: string | null;
+
+  @OneToMany(() => ConceptWord, (conceptWord) => conceptWord.concept)
+  concept_words: ConceptWord[];
+
+  @OneToMany(() => ConceptImage, (conceptImage) => conceptImage.concept)
+  images: ConceptImage[];
+
+  @OneToMany(
+    () => UserVocabularyItem,
+    (userVocabularyItem) => userVocabularyItem.concept,
+  )
+  user_vocabulary_items: UserVocabularyItem[];
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;

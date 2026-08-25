@@ -5,10 +5,12 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Language } from '../../languages/entities/language.entity';
+import { ConceptWord } from './concept-word.entity';
 
 @Entity({ name: 'words' })
 @Index(
@@ -34,6 +36,9 @@ export class Word {
 
   @Column({ type: 'varchar', length: 255 })
   normalized_text: string;
+
+  @OneToMany(() => ConceptWord, (conceptWord) => conceptWord.word)
+  concept_words: ConceptWord[];
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;

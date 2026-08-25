@@ -22,7 +22,10 @@ import { UserRoles } from '../users/entities/user-roles.entity';
 import { UserStatus } from '../users/entities/user-status.entity';
 import { UserTelegramAccounts } from '../users/entities/user-telegram-accounts.entity';
 import { User } from '../users/entities/user.entity';
+import { ConceptImage } from '../vocabulary/entities/concept-image.entity';
+import { ConceptWord } from '../vocabulary/entities/concept-word.entity';
 import { Concept } from '../vocabulary/entities/concept.entity';
+import { UserVocabularyItem } from '../vocabulary/entities/user-vocabulary-item.entity';
 import { Word } from '../vocabulary/entities/word.entity';
 import { ensureDatabaseSshTunnel } from './database-ssh-tunnel';
 
@@ -59,6 +62,9 @@ export async function createDatabaseOptions(): Promise<DataSourceOptions> {
       Language,
       Word,
       Concept,
+      ConceptWord,
+      ConceptImage,
+      UserVocabularyItem,
       ProductType,
     ],
     timezone: 'Z',
