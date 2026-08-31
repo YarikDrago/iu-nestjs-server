@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
@@ -94,6 +95,29 @@ export class VocabularyController {
         id,
         body,
       );
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete('my-items/:id')
+  async deleteMyItem(
+    @Req() req: Request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    try {
+      const user = await this.getUserFromRequest(req);
+
+      return await this.vocabularyService.deleteUserVocabularyItem(user.id, id);
     } catch (e) {
       console.log('ERROR:', (e as Error).message);
 

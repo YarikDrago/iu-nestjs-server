@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, FindOptionsWhere, Repository } from 'typeorm';
+import { EntityManager, FindOptionsWhere, In, Repository } from 'typeorm';
 import { Language } from '../languages/entities/language.entity';
 import { CreateUserVocabularyItemDto } from './dto/create-user-vocabulary-item.dto';
 import { GetUserVocabularyItemsDto } from './dto/get-user-vocabulary-items.dto';
@@ -92,9 +92,9 @@ export class VocabularyService {
       where.target_language_id = query.targetLanguageId;
     }
 
-    if (query.status !== undefined) {
-      where.status = query.status;
-    }
+    where.status =
+      query.status ??
+      In([UserVocabularyItemStatus.Active, UserVocabularyItemStatus.Archived]);
 
     const items = await this.userVocabularyItemRepository.find({
       where,
@@ -219,6 +219,30 @@ export class VocabularyService {
     itemId: number,
     dto: UpdateUserVocabularyItemDto,
   ): Promise<UserVocabularyItemResponse> {
+    const item = await this.findOwnedVocabularyItemOrThrow(userId, itemId);
+
+    item.status = dto.status;
+    await this.userVocabularyItemRepository.save(item);
+
+    return this.toUserVocabularyItemResponseFromEntity(item, userId);
+  }
+
+  async deleteUserVocabularyItem(
+    userId: number,
+    itemId: number,
+  ): Promise<UserVocabularyItemResponse> {
+    const item = await this.findOwnedVocabularyItemOrThrow(userId, itemId);
+
+    item.status = UserVocabularyItemStatus.Deleted;
+    await this.userVocabularyItemRepository.save(item);
+
+    return this.toUserVocabularyItemResponseFromEntity(item, userId);
+  }
+
+  private async findOwnedVocabularyItemOrThrow(
+    userId: number,
+    itemId: number,
+  ): Promise<UserVocabularyItem> {
     const item = await this.userVocabularyItemRepository.findOne({
       where: {
         id: itemId,
@@ -238,9 +262,13 @@ export class VocabularyService {
       throw new NotFoundException('Vocabulary item not found');
     }
 
-    item.status = dto.status;
-    await this.userVocabularyItemRepository.save(item);
+    return item;
+  }
 
+  private toUserVocabularyItemResponseFromEntity(
+    item: UserVocabularyItem,
+    userId: number,
+  ): UserVocabularyItemResponse {
     return this.toUserVocabularyItemResponse({
       item,
       concept: item.concept,

@@ -15,6 +15,7 @@ import { Concept } from './concept.entity';
 export enum UserVocabularyItemStatus {
   Active = 'active',
   Archived = 'archived',
+  Deleted = 'deleted',
 }
 
 @Entity({ name: 'user_vocabulary_items' })

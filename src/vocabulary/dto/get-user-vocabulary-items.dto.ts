@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsPositive } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsPositive } from 'class-validator';
 import { UserVocabularyItemStatus } from '../entities/user-vocabulary-item.entity';
 
 export class GetUserVocabularyItemsDto {
@@ -16,6 +16,6 @@ export class GetUserVocabularyItemsDto {
   targetLanguageId?: number;
 
   @IsOptional()
-  @IsEnum(UserVocabularyItemStatus)
+  @IsIn([UserVocabularyItemStatus.Active, UserVocabularyItemStatus.Archived])
   status?: UserVocabularyItemStatus;
 }

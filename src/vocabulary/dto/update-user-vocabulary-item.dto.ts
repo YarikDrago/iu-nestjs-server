@@ -1,7 +1,7 @@
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 import { UserVocabularyItemStatus } from '../entities/user-vocabulary-item.entity';
 
 export class UpdateUserVocabularyItemDto {
-  @IsEnum(UserVocabularyItemStatus)
+  @IsIn([UserVocabularyItemStatus.Active, UserVocabularyItemStatus.Archived])
   status: UserVocabularyItemStatus;
 }

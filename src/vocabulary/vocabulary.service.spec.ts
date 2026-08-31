@@ -215,7 +215,7 @@ describe('VocabularyService', () => {
           },
         ],
       },
-    } as UserVocabularyItem;
+    };
     userVocabularyItemRepository.find.mockResolvedValueOnce([item]);
 
     await expect(
@@ -282,6 +282,41 @@ describe('VocabularyService', () => {
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(userVocabularyItemRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('excludes deleted vocabulary items from default list', async () => {
+    userVocabularyItemRepository.find.mockResolvedValueOnce([]);
+
+    await expect(
+      service.getUserVocabularyItems(10, {
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+      }),
+    ).resolves.toEqual([]);
+
+    expect(userVocabularyItemRepository.find).toHaveBeenCalledWith({
+      where: {
+        user_id: 10,
+        source_language_id: 1,
+        target_language_id: 2,
+        status: expect.objectContaining({
+          _type: 'in',
+          _value: [
+            UserVocabularyItemStatus.Active,
+            UserVocabularyItemStatus.Archived,
+          ],
+        }),
+      },
+      relations: {
+        concept: {
+          concept_words: {
+            word: true,
+          },
+          images: true,
+        },
+      },
+      order: { created_at: 'DESC' },
+    });
   });
 
   it('creates a private concept with two concept words and a user vocabulary item', async () => {
@@ -435,7 +470,7 @@ describe('VocabularyService', () => {
         ],
         images: [],
       },
-    } as UserVocabularyItem;
+    };
     userVocabularyItemRepository.findOne.mockResolvedValueOnce(item);
 
     await expect(
@@ -487,6 +522,72 @@ describe('VocabularyService', () => {
       service.updateUserVocabularyItem(10, 999, {
         status: UserVocabularyItemStatus.Archived,
       }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(userVocabularyItemRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('soft-deletes own vocabulary item', async () => {
+    const item = {
+      id: 100,
+      user_id: 10,
+      concept_id: 200,
+      source_language_id: 1,
+      target_language_id: 2,
+      status: UserVocabularyItemStatus.Active,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        primary_word_id: 301,
+        concept_words: [
+          {
+            word: {
+              id: 300,
+              language_id: 1,
+              text: 'nice',
+            },
+          },
+          {
+            word: {
+              id: 301,
+              language_id: 2,
+              text: 'cool',
+            },
+          },
+        ],
+        images: [],
+      },
+    };
+    userVocabularyItemRepository.findOne.mockResolvedValueOnce(item);
+
+    await expect(service.deleteUserVocabularyItem(10, 100)).resolves.toEqual({
+      id: 100,
+      userId: 10,
+      conceptId: 200,
+      sourceLanguageId: 1,
+      targetLanguageId: 2,
+      status: UserVocabularyItemStatus.Deleted,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        primaryWordId: 301,
+        words: [
+          { id: 300, languageId: 1, text: 'nice' },
+          { id: 301, languageId: 2, text: 'cool' },
+        ],
+        images: [],
+      },
+    });
+    expect(userVocabularyItemRepository.save).toHaveBeenCalledWith({
+      ...item,
+      status: UserVocabularyItemStatus.Deleted,
+    });
+  });
+
+  it('rejects deleting missing or foreign vocabulary item', async () => {
+    userVocabularyItemRepository.findOne.mockResolvedValueOnce(null);
+
+    await expect(
+      service.deleteUserVocabularyItem(10, 999),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(userVocabularyItemRepository.save).not.toHaveBeenCalled();
   });

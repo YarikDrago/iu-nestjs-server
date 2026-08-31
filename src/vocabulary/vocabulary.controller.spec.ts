@@ -13,6 +13,7 @@ describe('VocabularyController', () => {
     | 'createUserVocabularyItem'
     | 'getUserVocabularyItems'
     | 'updateUserVocabularyItem'
+    | 'deleteUserVocabularyItem'
   >;
   let controller: VocabularyController;
 
@@ -27,6 +28,7 @@ describe('VocabularyController', () => {
       createUserVocabularyItem: jest.fn(),
       getUserVocabularyItems: jest.fn(),
       updateUserVocabularyItem: jest.fn(),
+      deleteUserVocabularyItem: jest.fn(),
     };
     controller = new VocabularyController(
       vocabularyService as VocabularyService,
@@ -200,27 +202,76 @@ describe('VocabularyController', () => {
       status: UserVocabularyItemStatus.Archived,
     };
 
-    await expect(controller.updateMyItem({} as never, 1, body)).resolves.toEqual(
-      {
+    await expect(
+      controller.updateMyItem({} as never, 1, body),
+    ).resolves.toEqual({
+      id: 1,
+      userId: 10,
+      conceptId: 2,
+      sourceLanguageId: 1,
+      targetLanguageId: 2,
+      status: UserVocabularyItemStatus.Archived,
+      concept: {
+        id: 2,
+        status: 'private',
+        primaryWordId: 3,
+        words: [],
+        images: [],
+      },
+    });
+    expect(vocabularyService.updateUserVocabularyItem).toHaveBeenCalledWith(
+      10,
+      1,
+      body,
+    );
+  });
+
+  it('deletes a vocabulary item for the authenticated user', async () => {
+    jest.mocked(authService.checkAccessTokenFromRequest).mockReturnValueOnce({
+      email: 'user@example.com',
+      nickname: 'user',
+    });
+    jest.mocked(usersService.findUserByEmail).mockResolvedValueOnce({
+      id: 10,
+      email: 'user@example.com',
+      nickname: 'user',
+    } as never);
+    jest
+      .mocked(vocabularyService.deleteUserVocabularyItem)
+      .mockResolvedValueOnce({
         id: 1,
         userId: 10,
         conceptId: 2,
         sourceLanguageId: 1,
         targetLanguageId: 2,
-        status: UserVocabularyItemStatus.Archived,
+        status: UserVocabularyItemStatus.Deleted,
         concept: {
           id: 2,
-          status: 'private',
+          status: 'private' as never,
           primaryWordId: 3,
           words: [],
           images: [],
         },
+      });
+
+    await expect(controller.deleteMyItem({} as never, 1)).resolves.toEqual({
+      id: 1,
+      userId: 10,
+      conceptId: 2,
+      sourceLanguageId: 1,
+      targetLanguageId: 2,
+      status: UserVocabularyItemStatus.Deleted,
+      concept: {
+        id: 2,
+        status: 'private',
+        primaryWordId: 3,
+        words: [],
+        images: [],
       },
-    );
-    expect(vocabularyService.updateUserVocabularyItem).toHaveBeenCalledWith(
+    });
+    expect(vocabularyService.deleteUserVocabularyItem).toHaveBeenCalledWith(
       10,
       1,
-      body,
     );
   });
 });
