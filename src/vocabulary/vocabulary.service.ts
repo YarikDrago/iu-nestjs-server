@@ -1,9 +1,14 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, FindOptionsWhere, Repository } from 'typeorm';
 import { Language } from '../languages/entities/language.entity';
 import { CreateUserVocabularyItemDto } from './dto/create-user-vocabulary-item.dto';
 import { GetUserVocabularyItemsDto } from './dto/get-user-vocabulary-items.dto';
+import { UpdateUserVocabularyItemDto } from './dto/update-user-vocabulary-item.dto';
 import {
   ConceptImage,
   ConceptImageStatus,
@@ -207,6 +212,41 @@ export class VocabularyService {
         });
       },
     );
+  }
+
+  async updateUserVocabularyItem(
+    userId: number,
+    itemId: number,
+    dto: UpdateUserVocabularyItemDto,
+  ): Promise<UserVocabularyItemResponse> {
+    const item = await this.userVocabularyItemRepository.findOne({
+      where: {
+        id: itemId,
+        user_id: userId,
+      },
+      relations: {
+        concept: {
+          concept_words: {
+            word: true,
+          },
+          images: true,
+        },
+      },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Vocabulary item not found');
+    }
+
+    item.status = dto.status;
+    await this.userVocabularyItemRepository.save(item);
+
+    return this.toUserVocabularyItemResponse({
+      item,
+      concept: item.concept,
+      words: this.getSortedConceptWords(item),
+      images: this.getVisibleConceptImages(item.concept.images ?? [], userId),
+    });
   }
 
   private async findOrCreateWord(

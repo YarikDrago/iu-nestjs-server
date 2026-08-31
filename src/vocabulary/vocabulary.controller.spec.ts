@@ -10,7 +10,9 @@ describe('VocabularyController', () => {
   let usersService: Pick<UsersService, 'findUserByEmail'>;
   let vocabularyService: Pick<
     VocabularyService,
-    'createUserVocabularyItem' | 'getUserVocabularyItems'
+    | 'createUserVocabularyItem'
+    | 'getUserVocabularyItems'
+    | 'updateUserVocabularyItem'
   >;
   let controller: VocabularyController;
 
@@ -24,6 +26,7 @@ describe('VocabularyController', () => {
     vocabularyService = {
       createUserVocabularyItem: jest.fn(),
       getUserVocabularyItems: jest.fn(),
+      updateUserVocabularyItem: jest.fn(),
     };
     controller = new VocabularyController(
       vocabularyService as VocabularyService,
@@ -161,6 +164,62 @@ describe('VocabularyController', () => {
     });
     expect(vocabularyService.createUserVocabularyItem).toHaveBeenCalledWith(
       10,
+      body,
+    );
+  });
+
+  it('updates a vocabulary item for the authenticated user', async () => {
+    jest.mocked(authService.checkAccessTokenFromRequest).mockReturnValueOnce({
+      email: 'user@example.com',
+      nickname: 'user',
+    });
+    jest.mocked(usersService.findUserByEmail).mockResolvedValueOnce({
+      id: 10,
+      email: 'user@example.com',
+      nickname: 'user',
+    } as never);
+    jest
+      .mocked(vocabularyService.updateUserVocabularyItem)
+      .mockResolvedValueOnce({
+        id: 1,
+        userId: 10,
+        conceptId: 2,
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+        status: UserVocabularyItemStatus.Archived,
+        concept: {
+          id: 2,
+          status: 'private' as never,
+          primaryWordId: 3,
+          words: [],
+          images: [],
+        },
+      });
+
+    const body = {
+      status: UserVocabularyItemStatus.Archived,
+    };
+
+    await expect(controller.updateMyItem({} as never, 1, body)).resolves.toEqual(
+      {
+        id: 1,
+        userId: 10,
+        conceptId: 2,
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+        status: UserVocabularyItemStatus.Archived,
+        concept: {
+          id: 2,
+          status: 'private',
+          primaryWordId: 3,
+          words: [],
+          images: [],
+        },
+      },
+    );
+    expect(vocabularyService.updateUserVocabularyItem).toHaveBeenCalledWith(
+      10,
+      1,
       body,
     );
   });

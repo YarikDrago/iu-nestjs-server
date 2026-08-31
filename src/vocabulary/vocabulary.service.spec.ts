@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Language } from '../languages/entities/language.entity';
 import {
   ConceptImage,
@@ -137,6 +137,8 @@ describe('VocabularyService', () => {
   let userVocabularyItemRepository: {
     manager: InMemoryVocabularyManager;
     find: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
   };
   let service: VocabularyService;
 
@@ -147,6 +149,8 @@ describe('VocabularyService', () => {
     userVocabularyItemRepository = {
       manager,
       find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(async (item: UserVocabularyItem) => item),
     };
 
     service = new VocabularyService(
@@ -399,5 +403,91 @@ describe('VocabularyService', () => {
         isPrimary: true,
       },
     ]);
+  });
+
+  it('updates own vocabulary item status', async () => {
+    const item = {
+      id: 100,
+      user_id: 10,
+      concept_id: 200,
+      source_language_id: 1,
+      target_language_id: 2,
+      status: UserVocabularyItemStatus.Active,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        primary_word_id: 301,
+        concept_words: [
+          {
+            word: {
+              id: 300,
+              language_id: 1,
+              text: 'классный',
+            },
+          },
+          {
+            word: {
+              id: 301,
+              language_id: 2,
+              text: 'cool',
+            },
+          },
+        ],
+        images: [],
+      },
+    } as UserVocabularyItem;
+    userVocabularyItemRepository.findOne.mockResolvedValueOnce(item);
+
+    await expect(
+      service.updateUserVocabularyItem(10, 100, {
+        status: UserVocabularyItemStatus.Archived,
+      }),
+    ).resolves.toEqual({
+      id: 100,
+      userId: 10,
+      conceptId: 200,
+      sourceLanguageId: 1,
+      targetLanguageId: 2,
+      status: UserVocabularyItemStatus.Archived,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        primaryWordId: 301,
+        words: [
+          { id: 300, languageId: 1, text: 'классный' },
+          { id: 301, languageId: 2, text: 'cool' },
+        ],
+        images: [],
+      },
+    });
+    expect(userVocabularyItemRepository.findOne).toHaveBeenCalledWith({
+      where: {
+        id: 100,
+        user_id: 10,
+      },
+      relations: {
+        concept: {
+          concept_words: {
+            word: true,
+          },
+          images: true,
+        },
+      },
+    });
+    expect(userVocabularyItemRepository.save).toHaveBeenCalledWith({
+      ...item,
+      status: UserVocabularyItemStatus.Archived,
+    });
+  });
+
+  it('rejects updating missing or foreign vocabulary item', async () => {
+    userVocabularyItemRepository.findOne.mockResolvedValueOnce(null);
+
+    await expect(
+      service.updateUserVocabularyItem(10, 999, {
+        status: UserVocabularyItemStatus.Archived,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(userVocabularyItemRepository.save).not.toHaveBeenCalled();
   });
 });
