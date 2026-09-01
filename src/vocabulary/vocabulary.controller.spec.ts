@@ -13,6 +13,7 @@ describe('VocabularyController', () => {
     | 'createUserVocabularyItem'
     | 'getUserVocabularyItems'
     | 'updateUserVocabularyItem'
+    | 'updateUserVocabularyItemContent'
     | 'deleteUserVocabularyItem'
   >;
   let controller: VocabularyController;
@@ -28,6 +29,7 @@ describe('VocabularyController', () => {
       createUserVocabularyItem: jest.fn(),
       getUserVocabularyItems: jest.fn(),
       updateUserVocabularyItem: jest.fn(),
+      updateUserVocabularyItemContent: jest.fn(),
       deleteUserVocabularyItem: jest.fn(),
     };
     controller = new VocabularyController(
@@ -273,5 +275,68 @@ describe('VocabularyController', () => {
       10,
       1,
     );
+  });
+
+  it('updates vocabulary item content for the authenticated user', async () => {
+    jest.mocked(authService.checkAccessTokenFromRequest).mockReturnValueOnce({
+      email: 'user@example.com',
+      nickname: 'user',
+    });
+    jest.mocked(usersService.findUserByEmail).mockResolvedValueOnce({
+      id: 10,
+      email: 'user@example.com',
+      nickname: 'user',
+    } as never);
+    jest
+      .mocked(vocabularyService.updateUserVocabularyItemContent)
+      .mockResolvedValueOnce({
+        id: 1,
+        userId: 10,
+        conceptId: 2,
+        sourceLanguageId: 2,
+        targetLanguageId: 1,
+        status: UserVocabularyItemStatus.Active,
+        concept: {
+          id: 2,
+          status: 'private' as never,
+          primaryWordId: 4,
+          words: [
+            { id: 3, languageId: 2, text: 'cool' },
+            { id: 4, languageId: 1, text: 'nice' },
+          ],
+          images: [],
+        },
+      });
+
+    const body = {
+      sourceLanguageId: 2,
+      targetLanguageId: 1,
+      sourceText: 'cool',
+      targetText: 'nice',
+    };
+
+    await expect(
+      controller.updateMyItemContent({} as never, 1, body),
+    ).resolves.toEqual({
+      id: 1,
+      userId: 10,
+      conceptId: 2,
+      sourceLanguageId: 2,
+      targetLanguageId: 1,
+      status: UserVocabularyItemStatus.Active,
+      concept: {
+        id: 2,
+        status: 'private',
+        primaryWordId: 4,
+        words: [
+          { id: 3, languageId: 2, text: 'cool' },
+          { id: 4, languageId: 1, text: 'nice' },
+        ],
+        images: [],
+      },
+    });
+    expect(
+      vocabularyService.updateUserVocabularyItemContent,
+    ).toHaveBeenCalledWith(10, 1, body);
   });
 });

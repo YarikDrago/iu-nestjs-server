@@ -18,6 +18,7 @@ import { AuthService } from '../auth/auth.service';
 import { UsersService } from '../users/users.service';
 import { CreateUserVocabularyItemDto } from './dto/create-user-vocabulary-item.dto';
 import { GetUserVocabularyItemsDto } from './dto/get-user-vocabulary-items.dto';
+import { UpdateUserVocabularyItemContentDto } from './dto/update-user-vocabulary-item-content.dto';
 import { UpdateUserVocabularyItemDto } from './dto/update-user-vocabulary-item.dto';
 import { VocabularyService } from './vocabulary.service';
 
@@ -91,6 +92,34 @@ export class VocabularyController {
       const user = await this.getUserFromRequest(req);
 
       return await this.vocabularyService.updateUserVocabularyItem(
+        user.id,
+        id,
+        body,
+      );
+    } catch (e) {
+      console.log('ERROR:', (e as Error).message);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new HttpException(
+        (e as Error)?.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch('my-items/:id/content')
+  async updateMyItemContent(
+    @Req() req: Request,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateUserVocabularyItemContentDto,
+  ) {
+    try {
+      const user = await this.getUserFromRequest(req);
+
+      return await this.vocabularyService.updateUserVocabularyItemContent(
         user.id,
         id,
         body,

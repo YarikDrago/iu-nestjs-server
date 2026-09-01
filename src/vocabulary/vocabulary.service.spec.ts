@@ -60,6 +60,19 @@ class InMemoryVocabularyManager {
     return await this.saveOne(entity, payload);
   }
 
+  async delete<T>(
+    entity: new () => T,
+    where: Record<string, unknown>,
+  ): Promise<void> {
+    const collection = this.getCollection(entity);
+    const remainingRecords = collection.filter(
+      (item) =>
+        !Object.entries(where).every(([key, value]) => item[key] === value),
+    );
+
+    collection.splice(0, collection.length, ...remainingRecords);
+  }
+
   seedLanguage(id: number, code: string): Language {
     const language = {
       id,
@@ -524,6 +537,167 @@ describe('VocabularyService', () => {
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(userVocabularyItemRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('updates own private vocabulary item content', async () => {
+    const oldWord = manager.seedWord(70, 1, 'old');
+    const concept = {
+      id: 200,
+      status: ConceptStatus.Private,
+      created_by_user_id: 10,
+      primary_word_id: oldWord.id,
+      concept_words: [],
+      images: [],
+    } as Concept;
+    const item = {
+      id: 100,
+      user_id: 10,
+      concept_id: concept.id,
+      source_language_id: 1,
+      target_language_id: 2,
+      status: UserVocabularyItemStatus.Archived,
+      concept,
+    } as UserVocabularyItem;
+    const oldConceptWord = {
+      id: 80,
+      concept_id: concept.id,
+      word_id: oldWord.id,
+      word: oldWord,
+      created_by_user_id: 10,
+      is_primary: true,
+    } as ConceptWord;
+
+    concept.concept_words = [oldConceptWord];
+    manager.concepts.push(concept);
+    manager.conceptWords.push(oldConceptWord);
+    manager.userVocabularyItems.push(item);
+
+    await expect(
+      service.updateUserVocabularyItemContent(10, 100, {
+        sourceLanguageId: 2,
+        targetLanguageId: 1,
+        sourceText: ' Cool ',
+        targetText: ' Nice ',
+      }),
+    ).resolves.toEqual({
+      id: 100,
+      userId: 10,
+      conceptId: 200,
+      sourceLanguageId: 2,
+      targetLanguageId: 1,
+      status: UserVocabularyItemStatus.Archived,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        primaryWordId: 72,
+        words: [
+          { id: 71, languageId: 2, text: 'Cool' },
+          { id: 72, languageId: 1, text: 'Nice' },
+        ],
+        images: [],
+      },
+    });
+
+    expect(item.source_language_id).toBe(2);
+    expect(item.target_language_id).toBe(1);
+    expect(concept.primary_word_id).toBe(72);
+    expect(manager.conceptWords).toEqual([
+      expect.objectContaining({
+        concept_id: concept.id,
+        word_id: 71,
+        is_primary: false,
+      }),
+      expect.objectContaining({
+        concept_id: concept.id,
+        word_id: 72,
+        is_primary: true,
+      }),
+    ]);
+  });
+
+  it('rejects editing a non-private vocabulary item content', async () => {
+    const concept = {
+      id: 200,
+      status: ConceptStatus.Verified,
+      created_by_user_id: 10,
+      primary_word_id: null,
+      concept_words: [],
+      images: [],
+    } as Concept;
+    manager.userVocabularyItems.push({
+      id: 100,
+      user_id: 10,
+      concept_id: concept.id,
+      source_language_id: 1,
+      target_language_id: 2,
+      status: UserVocabularyItemStatus.Active,
+      concept,
+    } as UserVocabularyItem);
+
+    await expect(
+      service.updateUserVocabularyItemContent(10, 100, {
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+        sourceText: 'nice',
+        targetText: 'cool',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects editing a deleted vocabulary item content', async () => {
+    manager.userVocabularyItems.push({
+      id: 100,
+      user_id: 10,
+      concept_id: 200,
+      source_language_id: 1,
+      target_language_id: 2,
+      status: UserVocabularyItemStatus.Deleted,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        created_by_user_id: 10,
+        primary_word_id: null,
+        concept_words: [],
+        images: [],
+      },
+    } as UserVocabularyItem);
+
+    await expect(
+      service.updateUserVocabularyItemContent(10, 100, {
+        sourceLanguageId: 1,
+        targetLanguageId: 2,
+        sourceText: 'nice',
+        targetText: 'cool',
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('rejects editing vocabulary item content with missing language', async () => {
+    manager.userVocabularyItems.push({
+      id: 100,
+      user_id: 10,
+      concept_id: 200,
+      source_language_id: 1,
+      target_language_id: 2,
+      status: UserVocabularyItemStatus.Active,
+      concept: {
+        id: 200,
+        status: ConceptStatus.Private,
+        created_by_user_id: 10,
+        primary_word_id: null,
+        concept_words: [],
+        images: [],
+      },
+    } as UserVocabularyItem);
+
+    await expect(
+      service.updateUserVocabularyItemContent(10, 100, {
+        sourceLanguageId: 1,
+        targetLanguageId: 999,
+        sourceText: 'nice',
+        targetText: 'cool',
+      }),
+    ).rejects.toThrow('Target language not found');
   });
 
   it('soft-deletes own vocabulary item', async () => {

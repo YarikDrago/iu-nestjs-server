@@ -8,6 +8,7 @@ import { EntityManager, FindOptionsWhere, In, Repository } from 'typeorm';
 import { Language } from '../languages/entities/language.entity';
 import { CreateUserVocabularyItemDto } from './dto/create-user-vocabulary-item.dto';
 import { GetUserVocabularyItemsDto } from './dto/get-user-vocabulary-items.dto';
+import { UpdateUserVocabularyItemContentDto } from './dto/update-user-vocabulary-item-content.dto';
 import { UpdateUserVocabularyItemDto } from './dto/update-user-vocabulary-item.dto';
 import {
   ConceptImage,
@@ -225,6 +226,117 @@ export class VocabularyService {
     await this.userVocabularyItemRepository.save(item);
 
     return this.toUserVocabularyItemResponseFromEntity(item, userId);
+  }
+
+  async updateUserVocabularyItemContent(
+    userId: number,
+    itemId: number,
+    dto: UpdateUserVocabularyItemContentDto,
+  ): Promise<UserVocabularyItemResponse> {
+    if (dto.sourceLanguageId === dto.targetLanguageId) {
+      throw new BadRequestException(
+        'Source and target languages must be different',
+      );
+    }
+
+    return await this.userVocabularyItemRepository.manager.transaction(
+      async (manager) => {
+        const item = await manager.findOne(UserVocabularyItem, {
+          where: {
+            id: itemId,
+            user_id: userId,
+          },
+          relations: {
+            concept: {
+              concept_words: {
+                word: true,
+              },
+              images: true,
+            },
+          },
+        });
+
+        if (!item || item.status === UserVocabularyItemStatus.Deleted) {
+          throw new NotFoundException('Vocabulary item not found');
+        }
+
+        const concept = item.concept;
+
+        if (
+          !concept ||
+          concept.status !== ConceptStatus.Private ||
+          Number(concept.created_by_user_id) !== Number(userId)
+        ) {
+          throw new BadRequestException(
+            'Only own private vocabulary items can be edited',
+          );
+        }
+
+        const [sourceLanguage, targetLanguage] = await Promise.all([
+          manager.findOne(Language, {
+            where: { id: dto.sourceLanguageId },
+          }),
+          manager.findOne(Language, {
+            where: { id: dto.targetLanguageId },
+          }),
+        ]);
+
+        if (!sourceLanguage) {
+          throw new BadRequestException('Source language not found');
+        }
+
+        if (!targetLanguage) {
+          throw new BadRequestException('Target language not found');
+        }
+
+        const sourceWord = await this.findOrCreateWord(manager, {
+          languageId: sourceLanguage.id,
+          text: dto.sourceText,
+        });
+        const targetWord = await this.findOrCreateWord(manager, {
+          languageId: targetLanguage.id,
+          text: dto.targetText,
+        });
+
+        await manager.delete(ConceptWord, { concept_id: concept.id });
+
+        const conceptWords = (await manager.save(ConceptWord, [
+          manager.create(ConceptWord, {
+            concept_id: concept.id,
+            word_id: sourceWord.id,
+            word: sourceWord,
+            created_by_user_id: userId,
+            is_primary: false,
+          }),
+          manager.create(ConceptWord, {
+            concept_id: concept.id,
+            word_id: targetWord.id,
+            word: targetWord,
+            created_by_user_id: userId,
+            is_primary: true,
+          }),
+        ])) as ConceptWord[];
+
+        concept.primary_word_id = targetWord.id;
+        concept.concept_words = conceptWords;
+        const savedConcept = await manager.save(Concept, concept);
+
+        item.source_language_id = sourceLanguage.id;
+        item.target_language_id = targetLanguage.id;
+        item.concept = savedConcept;
+        const savedItem = await manager.save(UserVocabularyItem, item);
+
+        return this.toUserVocabularyItemResponse({
+          item: savedItem,
+          concept: savedConcept,
+          words: [sourceWord, targetWord],
+          images: this.getVisibleConceptImages(
+            savedConcept.images ?? [],
+            userId,
+          ),
+        });
+      },
+    );
   }
 
   async deleteUserVocabularyItem(
