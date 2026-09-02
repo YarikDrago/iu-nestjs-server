@@ -20,6 +20,7 @@ import { CreateConcepts1782259200000 } from './migrations/1782259200000-CreateCo
 import { CreateVocabularyMvpModel1782345600000 } from './migrations/1782345600000-CreateVocabularyMvpModel';
 import { AddConceptMergeFields1782432000000 } from './migrations/1782432000000-AddConceptMergeFields';
 import { AddDeletedVocabularyItemStatus1782518400000 } from './migrations/1782518400000-AddDeletedVocabularyItemStatus';
+import { AddTesterUserRole1782604800000 } from './migrations/1782604800000-AddTesterUserRole';
 import { createDatabaseOptions } from './database/database-options';
 
 export default createDatabaseOptions().then(
@@ -46,6 +47,7 @@ export default createDatabaseOptions().then(
         CreateVocabularyMvpModel1782345600000,
         AddConceptMergeFields1782432000000,
         AddDeletedVocabularyItemStatus1782518400000,
+        AddTesterUserRole1782604800000,
       ],
       // extra: {
       //   initSql: "SET time_zone = '+00:00'",
