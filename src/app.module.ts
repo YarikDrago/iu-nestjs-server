@@ -17,6 +17,7 @@ import { LanguagesModule } from './languages/languages.module';
 import { createDatabaseOptions } from './database/database-options';
 import { ProductsModule } from './products/products.module';
 import { VocabularyModule } from './vocabulary/vocabulary.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { VocabularyModule } from './vocabulary/vocabulary.module';
     LanguagesModule,
     VocabularyModule,
     ProductsModule,
+    AdminModule,
     RefreshTokenModule,
     FootballModule,
     TournamentsModule,
