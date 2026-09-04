@@ -170,6 +170,15 @@ export class AuthController {
     return true;
   }
 
+  @Get('admin-access-token')
+  async getAdminAccessToken(@Req() req: Request) {
+    await this.authService.checkUserRolesByRequest(req, ['admin']);
+
+    return {
+      accessToken: this.getAccessTokenFromRequest(req),
+    };
+  }
+
   @Get('me')
   async me(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     this.setAuthNoStoreHeaders(res);
@@ -546,5 +555,24 @@ export class AuthController {
     }
 
     return req.ip ?? req.socket.remoteAddress ?? null;
+  }
+
+  private getAccessTokenFromRequest(req: Request): string {
+    const authorization = req.headers.authorization;
+    const bearerPrefix = 'Bearer ';
+
+    if (authorization?.startsWith(bearerPrefix)) {
+      return authorization.slice(bearerPrefix.length).trim();
+    }
+
+    const rawCookieHeader = req.headers.cookie ?? '';
+    const cookies = cookie.parse(rawCookieHeader);
+    const accessToken = cookies['accessToken'];
+
+    if (!accessToken) {
+      throw new UnauthorizedException('Access token is not found');
+    }
+
+    return accessToken;
   }
 }
